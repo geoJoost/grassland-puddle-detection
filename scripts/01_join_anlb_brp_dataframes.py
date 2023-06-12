@@ -52,6 +52,11 @@ def joindataframes(df1, df2):
     df2 = gpd.GeoDataFrame(df2, geometry= df2["Centroid"])
     df2_dropped = df2.drop(['Centroid'], axis=1)
     ANLB_BRP = gpd.sjoin(df1, df2_dropped)
+    
+#     code not completely working due to some holes in the BRP data
+#     code below takes all fields within the max distance of the centroid of
+#     subsidised areas
+#     ANLB_BRP = gpd.sjoin_nearest(df1, df2_dropped,max_distance=10)
     return ANLB_BRP
 
 # join BRP and ANLB data and safe it as a shapefile
