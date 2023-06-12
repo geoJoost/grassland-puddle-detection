@@ -1,0 +1,33 @@
+# History files
+**.Rhistory
+**.Rapp.history
+
+# Session Data files
+**.RData
+
+# User-specific files
+**.Ruserdata
+
+# Data files
+**.[rR][dD][sS]
+**.[rR][dD][aA]
+
+# Zip files
+**.[zZ][iI][pP]
+**.7[zZ]
+**.[rR][aA][rR]
+
+# Img files
+**.[pP][nN][gG]
+**.[jJ][pP][gG]
+**.[jJ][pP][eE][gG]
+**.[tT][iI][fF]
+**.[tT][iI][fF][fF]
+**.[gG][iI][fF]
+
+# directories
+data
+output
+
+# pdf files
+**.pdf
