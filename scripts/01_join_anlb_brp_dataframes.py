@@ -48,11 +48,13 @@ ANLB = gpd.read_file("data/output/01_ANLB_filtered.shp")
 ### join BRP and ANLB data ################################################
 def joindataframes(df1, df2):
     import geopandas as gpd
-    df1["Centroid"] = df1.centroid
-    df1 = gpd.GeoDataFrame(df1, geometry= df1["Centroid"])
-    #ANLB_BRP = gpd.sjoin(BRP, ANLB)
-    return df1
-join2 = joindataframes(ANLB, BRP)
-    
+    df2["Centroid"] = df2.centroid
+    df2 = gpd.GeoDataFrame(df2, geometry= df2["Centroid"])
+    df2_dropped = df2.drop(['Centroid'], axis=1)
+    ANLB_BRP = gpd.sjoin(df1, df2_dropped)
+    return ANLB_BRP
 
+# join BRP and ANLB data and safe it as a shapefile
+subsidised_field = joindataframes(BRP,ANLB)
+subsidised_field.to_file("data/output/01_subsidised_field.shp")
 
