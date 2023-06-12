@@ -24,7 +24,7 @@ def filterBRP(filepath, province, buffer_centroid= "buffer"):
 
 # filter BRP data and safe it as a shapefile
 BRP = filterBRP(filepath_BRP,province_BRP)
-BRP.to_file("data/Shapes/BRP_filtered.shp")
+BRP.to_file("data/output/01_BRP_filtered.shp")
 
 
 ### ANLB data #############################################################
@@ -40,9 +40,10 @@ def filterANLB(filepath, code_list):
 
 # filter ANLB data and safe it as a shapefile
 ANLB=filterANLB(filepath_ANLB,code_list_ANLB)
-ANLB.to_file("data/Shapes/ANLB_filtered.shp")
+ANLB.to_file("data/output/01_ANLB_filtered.shp")
 
-ANLB = gpd.read_file("data/Shapes/ANLB_filtered.shp")
+BRP = gpd.read_file("data/output/01_BRP_filtered.shp")
+ANLB = gpd.read_file("data/output/01_ANLB_filtered.shp")
 
 ### join BRP and ANLB data ################################################
 def joindataframes(df1, df2):
