@@ -28,6 +28,7 @@
 # directories
 data
 output
+myenv
 
 # pdf files
 **.pdf
