@@ -22,8 +22,8 @@ output_folder = base + "output\\"
 #%% Compress all .tif images provided in separate date subdirectories and store all outputs in same file
 # define source and output directories
 
-src_dir = "D:\RGIC23GR10\S1A" # This directory should have the same structure as the orignial S1 folder (i.e., contain subfolders with dates). Subdirectories should only contain the VV backscatter tif file.
-compressed_img_location = "D:\RGIC23GR10\S1Acomp3"
+src_dir = data_folder + "S1A\\" # This directory should have the same structure as the orignial S1 folder (i.e., contain subfolders with dates). Subdirectories should only contain the VV backscatter tif file.
+compressed_img_location = data_folder + "S1Acomp3\\"
 
 # create the output directory if it does not exist
 os.makedirs(compressed_img_location, exist_ok=True)
@@ -41,7 +41,7 @@ s1_pass_info_df = pd.read_csv(s1_pass_info_fp)
 s1_central_pass_dates = s1_pass_info_df.loc[s1_pass_info_df['Overpass'] == 'central', 'Date'].tolist() # filter for central pass
 s1_cp_jan_aug = [date for date in s1_central_pass_dates if date <= 20210820] # filter for january-august
 
-filtered_image_location = "D:\RGIC23GR10\data\S1_VV_filtered"
+filtered_image_location = data_folder + "S1_VV_filtered\\"
 source_folder = compressed_img_location
 destination_folder = filtered_image_location
 
@@ -64,7 +64,7 @@ for date in dates:
         shutil.copy(file_path, destination_folder)
         
 #%% Filter parcel data to exclude Zeeland and clip SAR images
-parcel_shapefiles = "D:\RGIC23GR10\data\Shapes\gewaspercelen_2021_S2Tiles_GWT_BF12_AHN2.shp"
+parcel_shapefiles = data_folder + "Shapes\gewaspercelen_2021_S2Tiles_GWT_BF12_AHN2.shp"
 
 # Load in all datasets
 parcel_gdf = gpd.read_file(parcel_shapefiles).to_crs(32631)
@@ -75,7 +75,7 @@ aeo_grasslands = aeo_parcel_gdf.loc[aeo_parcel_gdf['cat_gewasc'] == 'Grasland']
 
 
 # Write  grassland parcels to file 
-grassland_fn = "02_aeo_grassland_parcels.shp"
+grassland_fn = "02_aoi_grassland_parcels.shp"
 grassland_file = os.path.join(output_folder + grassland_fn)
 aeo_grasslands.to_file(grassland_file)
 
