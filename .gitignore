@@ -29,6 +29,7 @@
 data
 output
 myenv
+input
 
 # pdf files
 **.pdf
