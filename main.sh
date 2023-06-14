@@ -15,7 +15,7 @@ mkdir -p output || exit 1
 
 # MANUALLY create a Python environment
 # Use conda env create --file createEnv.yaml
-source activate geo_env
+# source activate geo_env  
 
 echo "Running the scripts"
 # Run script 1 to join ANLB and BRP dataframes
