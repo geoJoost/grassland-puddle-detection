@@ -19,7 +19,5 @@ source activate geo_env
 
 echo "Running the scripts"
 # Run script 1 to join ANLB and BRP dataframes
-#!/usr/bin/env python3.11
-#!/bin/bash
 python scripts/01_join_anlb_brp_dataframes.py
 
