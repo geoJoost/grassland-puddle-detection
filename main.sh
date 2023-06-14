@@ -10,6 +10,7 @@
 
 # Create a data and an output folder
 mkdir -p data || exit 1 
+mkdir -p input || exit 1
 mkdir -p output || exit 1
 
 # MANUALLY create a Python environment
