@@ -6,11 +6,7 @@ Created on Fri Jun  9 10:47:22 2023
 """
 import geopandas as gpd
 import pandas as pd
-
-### ANLB data #############################################################
-# just for easy filling in the function
-filepath_ANLB = "input/Shapes/ANLB_2021.shp"
-code_list_ANLB = ['3a','3b','3c','3d']
+import os
 
 def filterANLB(filepath, code_list):
     """
@@ -32,17 +28,10 @@ def filterANLB(filepath, code_list):
     ANLB = ANLB[ANLB["CODE_BEHEE"].isin(code_list)]
     return ANLB
 
-# filter ANLB data and safe it as a shapefile
-ANLB=filterANLB(filepath_ANLB,code_list_ANLB)
-ANLB.to_file("data/01_ANLB_filtered.shp")
-
-BRP = gpd.read_file("input/Shapes/gewaspercelen_2021_S2Tiles_GWT_BF12_AHN2.shp")
-ANLB = gpd.read_file("data/01_ANLB_filtered.shp")
-
 ### join BRP and ANLB data ################################################
 def joindataframes(df1, df2):
     """
-    function that spatial joins two geopandas dataframes. It calculates the centroid of
+    Function that spatial joins two geopandas dataframes. It calculates the centroid of
     of df1 and joins df2 if the centroid intersects with the geometry of df2 while
     preserving the geometry of df1 (instead of the centroid geometry). The function adds a column
     and indicates "yes" when there was a join.
@@ -70,6 +59,22 @@ def joindataframes(df1, df2):
     df1_df2["Parcel_found"] = df1_df2["fieldid"].apply(lambda x: 'yes' if pd.notnull(x) else 'no')
     return df1_df2
 
+### ANLB data #######################################################
+# Due to time reasons, first check if the file already exist
+if os.path.exists("data/01_ANLB_filtered.shp"):
+    print("01_ANLB_filtered.shp exists")
+else: 
+    filepath_ANLB = "input/Shapes/ANLB_2021.shp"
+    code_list_ANLB = ['3a','3b','3c','3d']
+    # filter ANLB data and safe it as a shapefile
+    ANLB=filterANLB(filepath_ANLB,code_list_ANLB)
+    ANLB.to_file("data/01_ANLB_filtered.shp")
+    ANLB = gpd.read_file("data/01_ANLB_filtered.shp")
+
 # join BRP and ANLB data and safe it as a shapefile
-subsidised_field = joindataframes(ANLB,BRP)
-subsidised_field.to_file("output/01_subsidised_field.shp")
+if os.path.exists("output/01_subsidised_field.shp"):
+    print("output/01_subsidised_field.shp exists")
+else:
+    BRP = gpd.read_file("input/Shapes/gewaspercelen_2021_S2Tiles_GWT_BF12_AHN2.shp")
+    subsidised_field = joindataframes(ANLB,BRP)
+    subsidised_field.to_file("output/01_subsidised_field.shp")
