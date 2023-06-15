@@ -44,27 +44,30 @@ def filterANLB(filepath, code_list): # Can be imported from script 01
     ANLB = ANLB[ANLB["CODE_BEHEE"].isin(code_list)]
     return ANLB
 
-if os.path.exists(data_folder + "\\01_ANLB_filtered.shp"):
-    print("01_ANLB_filtered.shp exists")
-else: 
-    filepath_ANLB = data_folder + "Shapes\\ANLB_2021.shp"
-    code_list_ANLB = ['3a','3b','3c','3d']
-    # filter ANLB data and safe it as a shapefile
-    ANLB=filterANLB(filepath_ANLB,code_list_ANLB)
-    ANLB.to_file(data_folder + "\\01_ANLB_filtered.shp")
-    ANLB = gpd.read_file(data_folder + "\\01_ANLB_filtered.shp").to_crs(32631)
-
         
 def clip_raster_mixedpixel(raster_fp, vector_fp, output_fp):
     """
     Function clips input raster based on parcel shapefile. 
     The output raster countains backscatter values of mixed pixels, i.e., pixels that touch the parcel polygons.
-    
-    raster_fp : Input .tif raster image filepath. The input raster should be (compressed) original SAR backscatter image.
-    vector_fp : Input shapefile filepath. The shapefile should be the ANLB parcel polygons.
-    output_fp : Output clipped raster filepath.
-    
+    The value for exlcluded pixels is set to 999
+
+    Parameters
+    ----------
+    raster_fp : TYPE string
+        DESCRIPTION. Input .tif raster image filepath. The input raster should be (compressed) original SAR backscatter image.
+    vector_fp : TYPE string
+        DESCRIPTION. vector_fp : Input shapefile filepath. The shapefile should be the ANLB parcel polygons.
+    output_fp : TYPE string
+        DESCRIPTION. Output clipped raster filepath.
+
+    Returns
+    -------
+    str
+        DESCRIPTION.
+
     """
+    
+
     src_raster_path = raster_fp
 
     shp_file_path = vector_fp
@@ -93,13 +96,25 @@ def clip_raster_mixedpixel(raster_fp, vector_fp, output_fp):
 def clip_raster_purepixel(raster_fp, vector_fp, output_fp):
     """
     Function clips input raster based on parcel perimeter shapefile. 
-    The output raster countains only backscatter values for pixels that lie purely inside ANLB parcel.
-    
-    raster_fp : Input .tif raster image filepath. The input raster should be the mixed pixel clipping.
-    vector_fp : Input shapefile filepath. The shapefile should be the line perimeter of the parcel polygons.
-    output_fp : Output clipped raster filepath.
-    
+    The output raster countains only backscatter values for pixels that lie purely inside parcel.
+
+    Parameters
+    ----------
+    raster_fp : TYPE string
+        DESCRIPTION. Input .tif raster image filepath. The input raster should be the mixed pixel clipping.
+    vector_fp : TYPE string
+        DESCRIPTION. Input shapefile filepath. The shapefile should be the line perimeter of the parcel polygons.
+    output_fp : TYPE string
+        DESCRIPTION. Output clipped raster filepath.
+
+    Returns
+    -------
+    str
+        DESCRIPTION.
+
     """
+    
+
     src_raster_path = raster_fp
 
     shp_file_path = vector_fp
@@ -124,6 +139,56 @@ def clip_raster_purepixel(raster_fp, vector_fp, output_fp):
         dest.write(out_image)
         
         return f"{output_raster_path} was written to file." 
+    
+def process_rasters(source_folder, destination_folder, clipfunction, shapefile):
+    """
+    Function to batch clip the SAR raster images to either pure or mixed pixels
+
+    Parameters
+    ----------
+    source_folder : string
+        DESCRIPTION. The filepath of the folder containing the raster images you want to clip. For mixed pixel
+        this should be the original SAR images. For pure pixel it should be the folder containing the mixed pixel
+        clippings.
+    destination_folder : TYPE string
+        DESCRIPTION. The destination folder you want to store the clipped rasters.
+    clipfunction : TYPE function
+        DESCRIPTION. Either clip_raster_mixedpixel or clip_raster_purepixel. 
+    shapefile : TYPE shapefile
+        DESCRIPTION. The shapefile you want to use to clip your raster to. In case of mixed pixel clipping, use
+        parcel shapes. For pure pixel use the line perimeter of parcels.
+
+    Returns
+    -------
+    None. 
+
+    """
+    # Create the destination folder if it doesn't exist
+    os.makedirs(destination_folder, exist_ok=True)
+
+    # Get a list of .tif files in the source folder
+    file_list = glob.glob(os.path.join(source_folder, '*.tif'))
+
+    # Iterate through each file
+    for file_path in file_list:
+        # Get the filename and extension
+        filename = os.path.splitext(os.path.basename(file_path))[0]
+
+        # Create the new filename
+        if clipfunction == clip_raster_mixedpixel:
+            new_filename = f"02_{filename}_mp_clip.tif"
+        elif clipfunction == clip_raster_purepixel:
+            new_filename = f"{filename.replace('_mp', '_pp')}.tif"
+        else:
+            print ('This clip function does not exist.')
+
+        # Construct the output file path
+        output_path = os.path.join(destination_folder, new_filename)
+
+        # Apply the clip function to the raster
+        clipfunction(file_path, shapefile, output_path)
+        
+
 #%% Compress all .tif images provided in separate date subdirectories and store all outputs in same file
 # define source and output directories
 
@@ -205,7 +270,15 @@ for date in dates:
 # grassland_file = os.path.join(output_folder + grassland_fn)
 # aeo_grasslands.to_file(grassland_file)
 
-
+if os.path.exists(data_folder + "\\01_ANLB_filtered.shp"):
+    print("01_ANLB_filtered.shp exists")
+else: 
+    filepath_ANLB = data_folder + "Shapes\\ANLB_2021.shp"
+    code_list_ANLB = ['3a','3b','3c','3d']
+    # filter ANLB data and safe it as a shapefile
+    ANLB=filterANLB(filepath_ANLB,code_list_ANLB)
+    ANLB.to_file(data_folder + "\\01_ANLB_filtered.shp")
+    ANLB = gpd.read_file(data_folder + "\\01_ANLB_filtered.shp").to_crs(32631)
 
 ANLB.to_file(output_folder + "02_anlb_filtered_epsg32631.shp")
 
@@ -214,25 +287,6 @@ anlb_perimeter.to_file(output_folder + "02_anlb_perimeter.shp")
 
 
 
-#%% Testing mixed pixel function
-src_raster_path = data_folder + "S1_VV_comp_filtered\Sigma0_dB_VV_20210116_compressed.tif"
-
-shp_file_path = output_folder + "02_anlb_filtered_epsg32631.shp"
-
-output_raster_path = output_folder + "Sigma0_dB_VV_20210116_clipped_ANLB2.tif"
-
-clip_raster_mixedpixel(src_raster_path, shp_file_path, output_raster_path)
-
-
-#%% Testing pure pixel
-src_raster_path = output_folder + "Sigma0_dB_VV_20210116_clipped_ANLB2.tif"
-
-shp_file_path = output_folder + "02_anlb_perimeter.shp"
-
-output_raster_path = output_folder + "02_Sigma0_dB_VV_20210116_clipped_ANLB_pure.tif"
-
-clip_raster_purepixel(src_raster_path, shp_file_path, output_raster_path)
-
 
 #%% For loop to clip both mixed pixels and pure pixels 
 
@@ -240,31 +294,7 @@ clip_raster_purepixel(src_raster_path, shp_file_path, output_raster_path)
 # if not os.path.exists(mixed_pixel_fp):
 #     os.makedirs(mixed_pixel_fp)
 
-def process_rasters(source_folder, destination_folder, clipfunction, shapefile):
-    # Create the destination folder if it doesn't exist
-    os.makedirs(destination_folder, exist_ok=True)
 
-    # Get a list of .tif files in the source folder
-    file_list = glob.glob(os.path.join(source_folder, '*.tif'))
-
-    # Iterate through each file
-    for file_path in file_list:
-        # Get the filename and extension
-        filename = os.path.splitext(os.path.basename(file_path))[0]
-
-        # Create the new filename
-        if clipfunction == clip_raster_mixedpixel:
-            new_filename = f"02_{filename}_mp_clip.tif"
-        elif clipfunction == clip_raster_purepixel:
-            new_filename = f"{filename.replace('_mp', '_pp')}.tif"
-        else:
-            print ('This clip function does not exist.')
-
-        # Construct the output file path
-        output_path = os.path.join(destination_folder, new_filename)
-
-        # Apply the clip function to the raster
-        clipfunction(file_path, shapefile, output_path)
 
 # Mixed pixel clipping
 
