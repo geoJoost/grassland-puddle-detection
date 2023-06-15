@@ -16,6 +16,7 @@ import rasterio.mask
 
 from PIL import Image
 from rasterio.shutil import copy
+import glob
 
 
 base = "D:\\RGIC23GR10\\"
@@ -233,6 +234,57 @@ output_raster_path = output_folder + "02_Sigma0_dB_VV_20210116_clipped_ANLB_pure
 clip_raster_purepixel(src_raster_path, shp_file_path, output_raster_path)
 
 
+#%% For loop to clip both mixed pixels and pure pixels 
 
+
+# if not os.path.exists(mixed_pixel_fp):
+#     os.makedirs(mixed_pixel_fp)
+
+def process_rasters(source_folder, destination_folder, clipfunction, shapefile):
+    # Create the destination folder if it doesn't exist
+    os.makedirs(destination_folder, exist_ok=True)
+
+    # Get a list of .tif files in the source folder
+    file_list = glob.glob(os.path.join(source_folder, '*.tif'))
+
+    # Iterate through each file
+    for file_path in file_list:
+        # Get the filename and extension
+        filename = os.path.splitext(os.path.basename(file_path))[0]
+
+        # Create the new filename
+        if clipfunction == clip_raster_mixedpixel:
+            new_filename = f"02_{filename}_mp_clip.tif"
+        elif clipfunction == clip_raster_purepixel:
+            new_filename = f"{filename.replace('_mp', '_pp')}.tif"
+        else:
+            print ('This clip function does not exist.')
+
+        # Construct the output file path
+        output_path = os.path.join(destination_folder, new_filename)
+
+        # Apply the clip function to the raster
+        clipfunction(file_path, shapefile, output_path)
+
+# Mixed pixel clipping
+
+src_raster_og = data_folder + "S1_VV_comp_filtered\\"
+anlb_parcel_fp = output_folder + "02_anlb_filtered_epsg32631.shp"
+mixed_pixel_fp = output_folder + "S1_VV_mixedpixel_clipped\\"
+
+process_rasters(src_raster_og,mixed_pixel_fp, clip_raster_mixedpixel, anlb_parcel_fp)
+
+# Pure pixel clipping
+src_raster_mp = mixed_pixel_fp
+anlb_perimeter_fp = output_folder + "02_anlb_perimeter.shp"
+pure_pixel_fp = output_folder + "S1_VV_purepixel_clipped\\"
+
+process_rasters(src_raster_mp, pure_pixel_fp, clip_raster_purepixel, anlb_perimeter_fp)
+
+# Clipping SAR data to grassland parcels and ANLB parcels for Marnic
+src_raster = "D:\RGIC23GR10\data\S1_VV_comp_filtered\Sigma0_dB_VV_20210317_compressed.tif"
+grassland_anlb = output_folder + "02_aoi_grassland_parcels_merged.shp"
+output_raster_fp = output_folder + "02_Sigma0_dB_VV_20210317_compressed_glanlb_clip.tif"
+clip_raster_mixedpixel(src_raster, grassland_anlb, output_raster_fp)
 
 
