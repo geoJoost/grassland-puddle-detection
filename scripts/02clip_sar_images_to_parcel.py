@@ -90,6 +90,36 @@ def filter_og_SAR(infile, outfile, polarisation, datelist):
                     print (f"{filename} was copied to {outfile}.")
     
     print(f"Copying of {polarisation} images finished")
+    
+def compress_images(src_dir, out_dir):
+    """
+    Function to compress S1 images using LZW compression. Compressed images are stored in separate folder
+    and get a "_compressed.tif" suffix.
+
+    Parameters
+    ----------
+    src_dir : TYPE string
+        DESCRIPTION. Path to folder containing all the .tif images to be compressed.
+    out_dir : TYPE string
+        DESCRIPTION. Path to output directory where you want to store the compressed images.
+
+    Returns
+    -------
+    None.
+
+    """
+    os.makedirs(out_dir, exist_ok=True)
+    Image.MAX_IMAGE_PIXELS = None
+
+    for file in os.listdir(src_dir):
+        if file.endswith('.tif'):
+            full_file_path = os.path.join(src_dir, file)
+            out_file_path = os.path.join(out_dir, os.path.splitext(file)[0] + "_compressed.tif")
+
+            with rasterio.open(full_file_path) as src:
+                copy(src, out_file_path, driver='GTiff', compress='lzw')
+
+    print("Image compression is done.")
 
         
 def clip_raster_mixedpixel(raster_fp, vector_fp, output_fp):
@@ -256,36 +286,9 @@ filter_og_SAR(infile, outfile, polarisation, datelist)
 #%% Compress all .tif images provided in separate date subdirectories and store all outputs in same file
 # define source and output directories
 
-src_S1 = data_folder + "S1A\\" # This directory should have the same structure as the orignial S1 folder (i.e., contain subfolders with dates). Subdirectories should only contain the VV backscatter tif file.
-compressed_img_location = data_folder + "S1A_compressed\\"
-
-
-# define source and output directories
-src_dir = src_S1
-out_dir = compressed_img_location
-
-# create the output directory if it does not exist
-os.makedirs(out_dir, exist_ok=True)
-
-# Increase the max pixel limit.
-Image.MAX_IMAGE_PIXELS = None
-
-
-
-for root, dirs, files in os.walk(src_dir):
-    for file in files:
-        if file.endswith('.tif'):
-            # Construct full file path
-            full_file_path = os.path.join(root, file)
-            # Construct output file path (without subdirectories) with "_compressed.tif" suffix
-            out_file_path = os.path.join(out_dir, os.path.splitext(file)[0] + "_compressed.tif")
-
-            # Open image file
-            with rasterio.open(full_file_path) as src:
-                # Copy the source image into the output file with LZW compression
-                copy(src, out_file_path, driver='GTiff', compress='lzw')
-
-print("Image compression is done.")
+src_dir = data_folder + "S1A_VV_filtered_rf" 
+out_dir = data_folder + "S1A_VV_filtered_compressed"
+compress_images(src_dir, out_dir) 
 
 
         
