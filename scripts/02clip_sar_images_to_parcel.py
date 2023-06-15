@@ -44,6 +44,53 @@ def filterANLB(filepath, code_list): # Can be imported from script 01
     ANLB = ANLB[ANLB["CODE_BEHEE"].isin(code_list)]
     return ANLB
 
+def filter_og_SAR(infile, outfile, polarisation, datelist):
+    """
+    Function to filter out backscatter images of interest from original data provided by WENR. The function iterates through the
+    Sentinel-1 image folder and copies files which match the following format: Sigma0_dB_{polarisation}_{date}.tif to a new folder.
+    Parameters
+    ----------
+    infile : TYPE string
+        DESCRIPTION. Path to source S1 folder containing the raw data given by WENR.
+    outfile : TYPE string
+        DESCRIPTION. Destination folder to store filtered images
+    polarisation : TYPE string
+        DESCRIPTION. Polarisation of the SAR image you want to filter for. VV or VH.
+    datelist : TYPE list of strings
+        DESCRIPTION. List of the dates (as strings) you want to obtain the images for. Date format should match subdirectory folder names,
+        i.e., the following format: YYYYMMDD. 
+
+    Returns
+    -------
+    None.
+
+    """
+    # Create the output folder if it doesn't exist
+    os.makedirs(outfile, exist_ok=True)
+
+    # Iterate through the input folder and its subfolders
+    for root, _, files in os.walk(infile):
+        # Iterate through the files in the current subfolder
+        for filename in files:
+            # Check if the file matches the desired filename pattern
+            if filename.startswith("Sigma0_dB_") and filename.endswith(".tif"):
+                # Extract the polarization and date from the filename
+                _, _, file_polarisation, filedate_tif = filename.split("_")
+                file_date = filedate_tif.replace('.tif', '')
+                #print(filename, file_polarisation, file_date)
+                
+                # Check if the polarization and date match the desired values
+                if file_polarisation == polarisation and file_date in datelist:
+                    # Construct the input and output file paths
+                    input_path = os.path.join(root, filename)
+                    output_path = os.path.join(outfile, filename)
+                    #print(input_path, output_path)
+                    # Copy the file to the output folder
+                    shutil.copyfile(input_path, output_path)
+                    print (f"{filename} was copied to {outfile}.")
+    
+    print(f"Copying of {polarisation} images finished")
+
         
 def clip_raster_mixedpixel(raster_fp, vector_fp, output_fp):
     """
@@ -187,7 +234,24 @@ def process_rasters(source_folder, destination_folder, clipfunction, shapefile):
 
         # Apply the clip function to the raster
         clipfunction(file_path, shapefile, output_path)
+    
         
+#%% Filter from original S1 data folder, only the backscatter .tif files obtained via central pass during study period. 
+
+# Create list of the dates for which images should be filtered for
+s1_pass_info_fp = data_folder + "S1A\Sentinel_1A_2021_overview.csv" #Read pass overview csv file
+s1_pass_info_df = pd.read_csv(s1_pass_info_fp)
+s1_central_pass_dates = s1_pass_info_df.loc[s1_pass_info_df['Overpass'] == 'central', 'Date'].tolist() # filter for central pass
+s1_cp_jan_aug = [date for date in s1_central_pass_dates if date <= 20210820] # filter for january-august
+
+
+# Filter images using filter_og_SAR function
+infile = data_folder + "S1A\\"
+outfile = data_folder + "S1A_VV_filtered_rf2"
+polarisation = 'VV'
+datelist = [str(date) for date in s1_cp_jan_aug]
+
+filter_og_SAR(infile, outfile, polarisation, datelist)
 
 #%% Compress all .tif images provided in separate date subdirectories and store all outputs in same file
 # define source and output directories
@@ -223,38 +287,10 @@ for root, dirs, files in os.walk(src_dir):
 
 print("Image compression is done.")
 
-#%% Filter images by central pass dates and time
 
-#Get list with the central pass dates and filter for january-august
-s1_pass_info_fp = data_folder + "S1A\Sentinel_1A_2021_overview.csv"
-s1_pass_info_df = pd.read_csv(s1_pass_info_fp)
-s1_central_pass_dates = s1_pass_info_df.loc[s1_pass_info_df['Overpass'] == 'central', 'Date'].tolist() # filter for central pass
-s1_cp_jan_aug = [date for date in s1_central_pass_dates if date <= 20210820] # filter for january-august
-
-filtered_image_location = data_folder + "S1_VV_comp_filtered\\"
-source_folder = compressed_img_location
-destination_folder = filtered_image_location
-
-
-dates = s1_cp_jan_aug
-
-# Copy the images corresponding to filtered dates
-# Create the destination folder if it does not exist
-if not os.path.exists(destination_folder):
-    os.makedirs(destination_folder)
-
-for date in dates:
-    # Construct the filename based on the date
-    filename = f"Sigma0_dB_VV_{date}_compressed.tif"
-    
-    # Check if the file exists in the source folder
-    file_path = os.path.join(source_folder, filename)
-    if os.path.isfile(file_path):
-        # Copy the file to the destination folder
-        shutil.copy(file_path, destination_folder)
         
-#%% Filter parcel data to exclude Zeeland and clip SAR images
-# NOTE: NO NEED TO RUN THIS PART IF YOU HAVE THE BRP PARCELS ALREADY
+#%% Filter BRP parcel data to exclude Zeeland 
+# NOTE: NO NEED TO RUN THIS PART IF YOU HAVE THE BRP PARCELS ALREADY, since it takes a long time
 # parcel_shapefiles = data_folder + "Shapes\gewaspercelen_2021_S2Tiles_GWT_BF12_AHN2.shp"
 
 # # Load in all datasets
@@ -288,13 +324,7 @@ anlb_perimeter.to_file(output_folder + "02_anlb_perimeter.shp")
 
 
 
-#%% For loop to clip both mixed pixels and pure pixels 
-
-
-# if not os.path.exists(mixed_pixel_fp):
-#     os.makedirs(mixed_pixel_fp)
-
-
+#%% Clip both mixed pixels and pure pixels 
 
 # Mixed pixel clipping
 
