@@ -74,6 +74,7 @@ else:
 # join BRP and ANLB data and safe it as a shapefile
 if os.path.exists("output/01_subsidised_field.shp"):
     print("output/01_subsidised_field.shp exists")
+    subsidised = gpd.read_file("output/01_subsidised_field.shp")
 else:
     BRP = gpd.read_file("input/Shapes/gewaspercelen_2021_S2Tiles_GWT_BF12_AHN2.shp")
     subsidised_field = joindataframes(ANLB,BRP)
