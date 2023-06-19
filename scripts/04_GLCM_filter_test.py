@@ -14,6 +14,8 @@ from joblib import Parallel, delayed, cpu_count
 import os
 from skimage.feature import graycomatrix, graycoprops
 from skimage import io, color, img_as_ubyte
+import rasterio
+
 
 def im_resize(im,Nx,Ny):
     '''
@@ -50,24 +52,27 @@ def p_me(Z, win):
 
 def read_raster(in_raster):
     in_raster=in_raster
-    ds = io.imread(in_raster)
-    data = ds#.ReadAsArray()
-    data[data<=0] = np.nan
-    gt = ds.GetGeoTransform()
+    ds = rasterio.open(in_raster)
+    data = ds.read()#.ReadAsArray()
+    #data[data<=0] = np.nan
+    gt = ds.transform
     xres = gt[1]
     yres = gt[5]
 
     # get the edge coordinates and add half the resolution 
     # to go to center coordinates
     xmin = gt[0] + xres * 0.5
-    xmax = gt[0] + (xres * ds.RasterXSize) - xres * 0.5
-    ymin = gt[3] + (yres * ds.RasterYSize) + yres * 0.5
+    xmax = gt[0] + (xres * ds.width) - xres * 0.5
+    ymin = gt[3] + (yres * ds.height) + yres * 0.5
     ymax = gt[3] - yres * 0.5
     del ds
     # create a grid of xy coordinates in the original projection
-    xx, yy = np.mgrid[xmin:xmax+xres:xres, ymax+yres:ymin:yres]
-    return data, xx, yy, gt
+    #xx, yy = np.mgrid[xmin:xmax+xres:xres, ymax+yres:ymin:yres]
+    return xmin, xmax, ymin, ymax
 
+    # create a grid of xy coordinates in the original projection
+    #xx, yy = np.mgrid[xmin:xmax+xres:xres, ymax+yres:ymin:yres]
+    #return data, xx, yy, gt
 def norm_shape(shap):
    '''
    Normalize numpy array shapes so they're always expressed as a tuple,
@@ -257,8 +262,7 @@ if __name__ == '__main__':
 
         driverName= 'GTiff'    
         epsg_code=26949
-        proj = osr.SpatialReference()
-        proj.ImportFromEPSG(epsg_code)
+        proj = epsg_code
 
         CreateRaster(xx, yy, contrast, gt, proj,driverName,contFile) 
         CreateRaster(xx, yy, dissimilarity, gt, proj,driverName,dissFile)
