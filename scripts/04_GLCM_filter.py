@@ -14,6 +14,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from skimage.feature import graycomatrix, graycoprops
 
+
+glcm_array=np.load("output/glcm_array.npy")
+
 sarfile = io.imread("input/Shapes/crane_kriging_raster_5.tif")
                     
                     #"input/Shapes/Coherence_VH_6day_20210104_quicklook.tif")
@@ -107,7 +110,7 @@ print(asm_feature(matrix_coocurrence))
 import matplotlib.pyplot as plt
 
 # Visualize the GLCM matrix
-plt.imshow(matrix_coocurrence[:, :, 0, 0], cmap='gray')
+plt.imshow(glcm_array[:, :, 0, 0], cmap='gray')
 plt.title('GLCM Matrix')
 plt.colorbar()
 plt.show()
