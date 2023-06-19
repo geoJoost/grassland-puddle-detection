@@ -175,7 +175,7 @@ def CreateRaster(xx,yy,std,gt,proj,driverName,outFile):
 if __name__ == '__main__':  
     win_sizes = [7]
     for win_size in win_sizes[:]:   
-        in_raster = "input/Shapes/Coherence_VH_6day_20210104_quicklook.tif"#Path to input raster
+        in_raster = "input/Shapes/02_Sigma0_dB_VV_20210317_compressed_glanlb_clip.tif"#Path to input raster
         win = win_size
         meter = str(win/4)
 
