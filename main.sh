@@ -1,12 +1,13 @@
 #!/bin/bash
 # Geoscripting 2023
-# Oxbow Gang:
+# Puddle Pirates:
               # Joost van Dalen
-              # 
-              # 
-              # 
-              # 
-# Identification of shallow puddles in Friesland, the Netherlands
+              # Marnic Baars
+              # Petra Bardocz
+              # Ageeth de Haan
+              # Moses Okolo
+              # Daan Lichtenberg
+# Identification of shallow puddles in the Netherlands
 
 # Create a data and an output folder
 mkdir -p data || exit 1 
