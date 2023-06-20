@@ -45,7 +45,6 @@ def p_me(Z): #win is deleted in the parameter
         eng = graycoprops(glcm, 'energy')
         corr = graycoprops(glcm, 'correlation')
         ASM = graycoprops(glcm, 'ASM')
-        print("p_me")
         return (cont, diss, homo, eng, corr, ASM)
     except:
         return (0,0,0,0,0,0)
@@ -57,13 +56,11 @@ def read_raster(in_raster):
     data = ds.GetRasterBand(1).ReadAsArray()
     data[data==999] = np.nan    
     # normalize raster
-    scaler = MinMaxScaler(feature_range=(0, 254))
+    scaler = MinMaxScaler(feature_range=(1, 255))
     normalized_raster = scaler.fit_transform(data.astype('float64'))
     normalized_raster = normalized_raster.astype('uint8')
-    print("normalize_raster")
-    
-    
-  
+    #normalized_raster[normalized_raster==np.nan] = 0
+    print("normalize_raster") 
     
 
     gt = ds.GetGeoTransform()
@@ -189,9 +186,9 @@ def CreateRaster(xx,yy,std,gt,proj,driverName,outFile):
 #Stuff to change
 
 if __name__ == '__main__':  
-    win_sizes = [20]
+    win_sizes = [7]
     for win_size in win_sizes[:]:   
-        in_raster = "input/sar_fryslan.tif"#Path to input raster
+        in_raster = "output/02_Sigma0_dB_VV_20210317_compressed_glanlb_clip.tif"#Path to input raster
         win = win_size
         meter = str(win/4)
 
@@ -220,16 +217,22 @@ if __name__ == '__main__':
         homo = [a[2] for a in w]
         eng  = [a[3] for a in w]
         corr = [a[4] for a in w]
-        ASM  = [a[5] for a in w]
-
-
+        ASM_  = [a[5] for a in w]
+        
+        #cont = [np.mean(array) for array in cont]
+        #diss = [np.mean(array) for array in diss]
+        #homo = [np.mean(array) for array in homo]
+        #eng = [np.mean(array) for array in eng]
+        #corr = [np.mean(array) for array in corr]
+        #ASM_ = [np.mean(array) for array in ASM_]
+        
         #Reshape to match number of windows
         plt_cont = np.reshape(cont , ( ind[0], ind[1] ) )
         plt_diss = np.reshape(diss , ( ind[0], ind[1] ) )
         plt_homo = np.reshape(homo , ( ind[0], ind[1] ) )
         plt_eng = np.reshape(eng , ( ind[0], ind[1] ) )
         plt_corr = np.reshape(corr , ( ind[0], ind[1] ) )
-        plt_ASM =  np.reshape(ASM , ( ind[0], ind[1] ) )
+        plt_ASM =  np.reshape(ASM_ , ( ind[0], ind[1] ) )
         del cont, diss, homo, eng, corr, ASM
 
         #Resize Images to receive texture and define filenames
