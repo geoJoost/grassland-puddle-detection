@@ -13,6 +13,8 @@ import dask.array as da
 from joblib import Parallel, delayed, cpu_count
 import os
 from skimage.feature import graycomatrix, graycoprops
+#normalize
+from sklearn.preprocessing import MinMaxScaler
 
 def im_resize(im,Nx,Ny):
     '''
@@ -35,13 +37,15 @@ def p_me(Z): #win is deleted in the parameter
     loop to calculate greycoprops
     '''
     try:
-        glcm = graycomatrix(Z, [5], [0], 256, symmetric=True, normed=True)
+        glcm = graycomatrix(Z, [1], [0], 256, symmetric=True, normed=True)
+                                #[0, np.pi/4, np.pi/2, 3*np.pi/4]
         cont = graycoprops(glcm, 'contrast')
         diss = graycoprops(glcm, 'dissimilarity')
         homo = graycoprops(glcm, 'homogeneity')
         eng = graycoprops(glcm, 'energy')
         corr = graycoprops(glcm, 'correlation')
         ASM = graycoprops(glcm, 'ASM')
+        print("p_me")
         return (cont, diss, homo, eng, corr, ASM)
     except:
         return (0,0,0,0,0,0)
@@ -51,7 +55,17 @@ def read_raster(in_raster):
     in_raster=in_raster
     ds = gdal.Open(in_raster)
     data = ds.GetRasterBand(1).ReadAsArray()
-    #data[data<=0] = np.nan
+    data[data==999] = np.nan    
+    # normalize raster
+    scaler = MinMaxScaler(feature_range=(0, 255))
+    normalized_raster = scaler.fit_transform(data.astype('float64'))
+    normalized_raster = normalized_raster.astype('uint8')
+    print("normalize_raster")
+    
+    
+  
+    
+
     gt = ds.GetGeoTransform()
     xres = gt[1]
     yres = gt[5]
@@ -65,7 +79,8 @@ def read_raster(in_raster):
     del ds
     # create a grid of xy coordinates in the original projection
     xx, yy = np.mgrid[xmin:xmax+xres:xres, ymax+yres:ymin:yres]
-    return data, xx, yy, gt
+    print("read raster")
+    return normalized_raster, xx, yy, gt #data, xx, yy, gt
 
 def norm_shape(shap):
    '''
@@ -167,15 +182,16 @@ def CreateRaster(xx,yy,std,gt,proj,driverName,outFile):
     ss_band.SetNoDataValue(-99)
     ss_band.FlushCache()
     ss_band.ComputeStatistics(False)
+    print("create raster")
     del ds
 
 
 #Stuff to change
 
 if __name__ == '__main__':  
-    win_sizes = [7]
+    win_sizes = [20]
     for win_size in win_sizes[:]:   
-        in_raster = "input/Shapes/02_Sigma0_dB_VV_20210317_compressed_glanlb_clip.tif"#Path to input raster
+        in_raster = "input/Shapes/c02_Sigma0_dB_VV_20210317.tif"#Path to input raster
         win = win_size
         meter = str(win/4)
 
@@ -192,7 +208,7 @@ if __name__ == '__main__':
         merge, xx, yy, gt = read_raster(in_raster)
 
         merge[np.isnan(merge)] = 0
-
+###
         Z,ind = sliding_window(merge,(win,win),(win,win))
 
         Ny, Nx = np.shape(merge)
