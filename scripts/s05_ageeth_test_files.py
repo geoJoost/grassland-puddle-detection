@@ -188,6 +188,7 @@ def CreateRaster(xx,yy,std,gt,proj,driverName,outFile):
 if __name__ == '__main__':  
     win_sizes = [7]
     for win_size in win_sizes[:]:   
+######################################################################        
         # Input directory where rasters are stored
         input_directory = "data/"
         
@@ -213,7 +214,9 @@ if __name__ == '__main__':
         
             # Construct the full inut file path
             in_raster = os.path.join(input_directory, input_raster)
-            
+            # Construct the full file path for the input raster
+            input_path = os.path.join(input_directory, input_raster)
+######################################################################  
         win = win_size
         meter = str(win/4)
 
@@ -272,7 +275,8 @@ if __name__ == '__main__':
         epsg_code=32631
         proj = osr.SpatialReference()
         proj.ImportFromEPSG(epsg_code)
-
+        
+###################################################################### 
         # Create the output raster file name using the same date and polarization
         output_raster = f"05_texture_{polarization}_{date}"
         
@@ -285,8 +289,6 @@ if __name__ == '__main__':
             output_raster_with_prop = f"{output_raster}_{prop_output}.tif"
             
             # Construct the full file path for the output raster
-            ####### need to adapt per prop_output?
-            input_path = os.path.join(input_directory, input_raster)
             output_path = os.path.join(output_directory, output_raster_with_prop)
             
             # Process the raster and save it (replace this with your own logic)
@@ -294,7 +296,7 @@ if __name__ == '__main__':
             
             # Print the input and output paths
             print(f"Processed: {input_path} -> {output_path}")
-            
+######################################################################             
     
 
         del contrast, merge, xx, yy, gt, meter, dissimilarity, homogeneity, energy, correlation, ASM
