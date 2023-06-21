@@ -5,19 +5,92 @@ Created on Mon Jun 19 11:27:57 2023
 @author: joost
 """
 
-import os
-import datetime
+# import packages / functions 
+
 import rasterio
 import pandas as pd
 import geopandas as gpd
 import numpy as np
-import rasterio
-from rasterio.mask import mask
 import matplotlib.pyplot as plt
-import seaborn as sns
 
+from rasterio.mask import mask
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, recall_score, ConfusionMatrixDisplay
+from sklearn.model_selection import RandomizedSearchCV, train_test_split
+from scipy.stats import randint
+
+# Tree Visualisation
+from sklearn.tree import export_graphviz
+from IPython.display import Image
+import graphviz
+
+
+# dataframe with colomns of interest vv vh texture and inundated / non inundated 
+# dataframename['inundated'] = dataframename['inundated'].map({'no':0,'yes':1})
+
+# Split the data into features (X) and target (y)
+X = dataframename.drop('inundated', axis=1)
+y = dataframename['inundated']
+
+# Split the data into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state = 1)
+
+# random forest 
+rf = RandomForestClassifier()
+rf.fit(X_train, y_train)
+
+# predictions 
+y_pred = rf.predict(X_test)
+
+# accuracy 
+accuracy = accuracy_score(y_test, y_pred)
+print("Accuracy:", accuracy)
+
+# Export the first three decision trees from the forest
+
+for i in range(3):
+    tree = rf.estimators_[i]
+    dot_data = export_graphviz(tree,
+                               feature_names=X_train.columns,  
+                               filled=True,  
+                               max_depth=2, 
+                               impurity=False, 
+                               proportion=True)
+    graph = graphviz.Source(dot_data)
+    display(graph)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 filename_brp_sample ='output/03_brp_sample.shp'
 fp_waterpoly = r'D:\grassland-puddle-detection\input\training_data\Water20210331.shp'
