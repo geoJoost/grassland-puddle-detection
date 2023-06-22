@@ -21,6 +21,7 @@ def calculate_inundation(thresholded_image):
     inundated_pixels = np.count_nonzero(thresholded_image == 1)
     total_pixels = np.size(thresholded_image)
     inundation_percentage = (inundated_pixels / total_pixels) * 100
+    print(f"Inundation percentage: {inundation_percentage}")
     return inundation_percentage
 
 
@@ -46,7 +47,10 @@ def calculate_inundation_all_images(image_folder, shapefile_filepath, output_fol
         if datetime(date.year, 2, 15) <= date <= datetime(date.year, 8, 15):
             category_images["3d"].append(image_filepath)
 
-            
+    print("Category Dict")
+
+    print(category_images)
+
     for category, image_filepaths in category_images.items():
         category_gdf = gdf[gdf["CODE_BEHEE"] == category]
         
@@ -104,9 +108,7 @@ def calculate_inundation_all_images(image_folder, shapefile_filepath, output_fol
         df.to_excel(f'../output/{category}_output.xlsx')
 
 
-    print("Final map of dataframe where keys are the categories:")
-    
-    print(category_dfs)
+   
 
     return category_dfs
 
