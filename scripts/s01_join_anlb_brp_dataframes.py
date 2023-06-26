@@ -60,8 +60,7 @@ def joindataframes(df1, df2):
     df1_df2["Parcel_found"] = df1_df2["fieldid"].apply(lambda x: 'yes' if pd.notnull(x) else 'no')
     return df1_df2
 
-#%% Scripts
-### ANLB data #######################################################
+#%% Define filepaths
 
 #Input filepaths
 brp_parcels_fp = "D:/RGIC23GR10/data/Shapes/gewaspercelen_2021_S2Tiles_GWT_BF12_AHN2.shp"
@@ -73,8 +72,9 @@ grassland_brp_fp = "D:/RGIC23GR10/data/01_brp_grasslands.shp"
 
 #Output filepaths
 joined_parcel_fp = "D:/RGIC23GR10/output/01_subsidised_field.shp"
+brp_grass_sample_fp ='D:/RGIC23GR10/output/01_brp_dry_grass_sample.shp'
 
-# Filter brp to graslands and write to file
+#%% Filter brp to graslands and write to file
 brp_parcels_gdf = gpd.read_file(brp_parcels_fp).to_crs(32631)
 grasland_brp_parcels = brp_parcels_gdf.loc[brp_parcels_gdf['cat_gewasc'] == 'Grasland']
 if not os.path.exists(grassland_brp_fp):
@@ -104,27 +104,27 @@ else:
 #     subsidised_field = joindataframes(ANLB,BRP)
 #     subsidised_field.to_file(joined_parcel_fp)
 
-# %% Read in files
-# First load in the ANLB-subsidy and BRP data
-gdf_anlb = ANLB
+#%% Create dataset containing only dry grass polygons
+# Load in the ANLB-subsidy parcels and BRP parcels
+anlb_gdf = gpd.read_file(filtered_anlb_fp).to_crs(32631)
+brp_gdf = gpd.read_file(brp_parcels_fp).to_crs(32631)
 
-brp_sample_fp ='D:/RGIC23GR10/output/01_brp_dry_grass_sample.shp'
 
-# Repeat for the BRP data
-if os.path.exists(brp_sample_fp):
+# Clipping
+if os.path.exists(brp_grass_sample_fp):
     print("BRP sampled dataset already exists")
-    gdf_brp_clip = gpd.read_file(brp_sample_fp)
+    gdf_brp_clip = gpd.read_file(brp_grass_sample_fp)
 else:
     print("BRP sampled dataset does not exist yet")
 
     # Randomly select 70,000 (about 10% of original sample, N=511,031) polygons from the BRP data
-    gdf_brp_sample = gdf_brp.sample(n=50000, random_state=1)
+    gdf_brp_sample = brp_gdf.sample(n=50000, random_state=1)
 
     # Conduct a reverse clip to make sure both vector files do not overlap
-    gdf_brp_clip = gpd.overlay(gdf_brp_sample, gdf_anlb, how='difference')
+    gdf_brp_clip = gpd.overlay(gdf_brp_sample, anlb_gdf, how='difference')
     
     # Export the BRP sampled dataset to file
-    gdf_brp_clip.to_file(filename_brp_sample)
+    gdf_brp_clip.to_file(brp_grass_sample_fp)
     
     print("BRP sampled dataset created \n")
     
