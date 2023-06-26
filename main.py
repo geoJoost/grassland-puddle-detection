@@ -50,11 +50,7 @@ def run_script(script_name):
     
     # Wait for the script to finish
     process.wait()
-    
     print("\n")
-    
-    # Get the script's return code
-    #return_code = process.returncode
     
 
 """
@@ -67,10 +63,24 @@ run_script("s01_join_anlb_brp_dataframes.py")
 """
 Script #2: Filtering and clipping of Sentinel-1 images
 TODO: ADD INFORMATION
-TODO: Add functions to run the script twice: for VV and VH
 """
 
 run_script("s02_clip_sar_images_to_parcel.py")
+
+""" Script #3
+This script does the following:
+    1. Extract SAR backscatter on ANLB + BRP parcels throughout the whole year from central overpass
+    2. Get statistics of both vector datasets as: min, mean, median, max and saves it as .csv
+    3. Repeat for five representative pixels which are inundated in 2021
+    4. Create and save this as time-series figure
+
+Comments:
+    - Ideally this script is ONLY used when more information on the problem is required as it takes >2 hours to run
+    - Output is not used in the rest of the model pipeline
+
+"""
+
+run_script("s03_get_anlb_statistics_from_sar.py")
 
 
 
