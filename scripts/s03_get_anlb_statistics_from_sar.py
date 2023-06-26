@@ -17,7 +17,7 @@ import seaborn as sns
 
 # %% Read in files
 # First load in the ANLB-subsidy and BRP data
-gdf_anlb = gpd.read_file("data/01_ANLB_filtered.shp").to_crs('EPSG:32631')
+gdf_anlb = gpd.read_file("output/01_ANLB_filtered.shp").to_crs('EPSG:32631')
 
 filename_brp_sample ='output/03_brp_sample.shp'
 
@@ -28,7 +28,7 @@ if os.path.exists(filename_brp_sample):
 else:
     print("BRP sampled dataset does not exist yet")
     # Read in BRP data
-    gdf_brp = gpd.read_file("input\Shapes\gewaspercelen_2021_S2Tiles_GWT_BF12_AHN2.shp").to_crs('EPSG:32631')
+    gdf_brp = gpd.read_file("data\Shapes\gewaspercelen_2021_S2Tiles_GWT_BF12_AHN2.shp").to_crs('EPSG:32631')
     
     # Following values are found: 'Grasland', 'Bouwland', 'Overige', 'Natuurterrein', 'Braakland'
     # and we only want to keep the grasslands for most realistic comparison
@@ -130,16 +130,10 @@ This function does the following things:
 def retrieve_zonal_statistics(vector, vector_name: str):
     # Define empty list to merge dataframes later on
     df_lst, df_combined = [], []
-    """
-    directory = 'output/'  # Specify the directory path here
-    
-    for filename in os.listdir(directory):
-        if filename.endswith(".tif"):      
-            file_path = os.path.join(directory, filename)
-            print(f"Working on image: {filename} with {vector_name}")
-    """
-    # TODO: Stop this hardcode and move data into the Git folder
-    rootdir = "D:\S1"  # Specify the directory path here 
+
+    # Define data folder
+    # NOTE: we take the original SAR images to cover backscatter values in the BRP parcels as well
+    rootdir = "data\S1"  # Specify the directory path here 
 
     # Loop over the entire dir
     for i, item in enumerate(sorted(os.listdir(rootdir))):
@@ -315,19 +309,3 @@ plt.tight_layout()
 
 # Save the figure
 plt.savefig("output/03_timeseries_backscatter.png")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
