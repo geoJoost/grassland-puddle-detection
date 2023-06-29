@@ -26,11 +26,10 @@ def calc_image_average():
             average_image = (image1 + image2) / 2
                 
             profile = src1.profile
-            avg_output_filepath = os.path.join(f"../data/thresh_stuff/output/averages/average_{len(image_filepaths)//2 + 1}", f'average_{len(image_filepaths)//2 + 1}.tif')
+            avg_output_filepath = os.path.join(f"../data/thresh_stuff/output/averages", f'average_{len(image_filepaths)//2 + 1}.tif')
             os.makedirs(os.path.dirname(avg_output_filepath), exist_ok=True)
                 
             with rasterio.open(avg_output_filepath, 'w', **profile) as dst:
                 dst.write(average_image, 1)
 
 
-calc_image_average()

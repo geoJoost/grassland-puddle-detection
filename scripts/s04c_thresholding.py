@@ -8,115 +8,150 @@ import pandas as pd
 from datetime import datetime
 import math
 from s04b_get_threshold_value import average_threshold
+from rasterio.io import MemoryFile
+import sys
 
+
+# # Getting the arguments
+# arg1 = sys.argv[1]
 
 
 output_path = '../output'
-image_folder = '../data/S1_VV_comp_filtered'
+image_folder = '../data/02_VV_mp_clipped'
 shapefile_path = '../data/01_SUBSIDISED_FIELDS/01_subsidised_field.shp'
-
 
 
 def calculate_inundation(thresholded_image):
     inundated_pixels = np.count_nonzero(thresholded_image == 1)
     total_pixels = np.size(thresholded_image)
     inundation_percentage = (inundated_pixels / total_pixels) * 100
-    print(f"Inundation percentage: {inundation_percentage}")
     return inundation_percentage
-
-
 
 
 def calculate_inundation_all_images(image_folder, shapefile_filepath, output_folder, threshold):
     image_filepaths = sorted(glob.glob(f"{image_folder}/*.tif"))
     gdf = gpd.read_file(shapefile_filepath)
-    
-    category_images = {"3a": [], "3b": [], "3c": [], "3d": []}
-    category_dfs = {"3a": pd.DataFrame(), "3b": pd.DataFrame(), "3c": pd.DataFrame(), "3d": pd.DataFrame()}
-    
-    for image_filepath in image_filepaths:
-        date_str = os.path.basename(image_filepath).split('_')[3]  
-        date = datetime.strptime(date_str, "%Y%m%d")  
+    nodata_value = 999  # Define your NoData value
 
-        if datetime(date.year, 2, 15) <= date <= datetime(date.year, 4, 15):
-            category_images["3a"].append(image_filepath)
-        if datetime(date.year, 2, 15) <= date <= datetime(date.year, 5, 15):
-            category_images["3b"].append(image_filepath)
-        if datetime(date.year, 2, 15) <= date <= datetime(date.year, 6, 15):
-            category_images["3c"].append(image_filepath)
-        if datetime(date.year, 2, 15) <= date <= datetime(date.year, 8, 15):
-            category_images["3d"].append(image_filepath)
+    # Create an empty dataframe for binary values
+    df = pd.DataFrame()
 
-    print("Category Dict")
+    # Create a separate dataframe for parcel-level inundation percentages
+    parcel_df = pd.DataFrame()
 
-    print(category_images)
+    category_dates = {
+        "3a": (2, 15, 4, 15),
+        "3b": (2, 15, 5, 15),
+        "3c": (2, 15, 6, 15),
+        "3d": (2, 15, 8, 15)
+    }
 
-    for category, image_filepaths in category_images.items():
-        category_gdf = gdf[gdf["CODE_BEHEE"] == category]
-        
-        for i in range(len(image_filepaths) - 1):
-            with rasterio.open(image_filepaths[i]) as src1, rasterio.open(image_filepaths[i + 1]) as src2:
-                image1 = src1.read(1)
-                image2 = src2.read(1)
-                average_image = (image1 + image2) / 2
-                
-                profile = src1.profile
-                avg_output_filepath = os.path.join(f"{output_folder}/{category}_average_{i + 1}", f'{category}_average_{i + 1}.tif')
-                os.makedirs(os.path.dirname(avg_output_filepath), exist_ok=True)
-                
-                with rasterio.open(avg_output_filepath, 'w', **profile) as dst:
-                    dst.write(average_image, 1)
+    # Filter image filepaths based on date range
+    start_date = datetime.now().replace(
+        month=category_dates["3d"][0], day=category_dates["3d"][1]
+    ).date()
+    end_date = datetime.now().replace(
+        month=category_dates["3d"][2], day=category_dates["3d"][3]
+    ).date()
+    # image_filepaths = [
+    #     image for image in image_filepaths if start_date <= datetime.strptime(
+    #         os.path.basename(image).split('_')[4], "%Y%m%d"
+    #     ).date() <= end_date
+    # ]
 
-                category_gdf = category_gdf.to_crs(src1.crs)
-                print(f"Calculating inundation for {category}_average_{i + 1}.tif")
-                for idx, row in category_gdf.iterrows():
-                    with rasterio.io.MemoryFile() as memfile:
+    image_filepaths = [
+    image for image in image_filepaths if datetime.strptime(
+        os.path.basename(image).split('_')[4], "%Y%m%d"
+    ).date() >= datetime.now().replace(
+        month=category_dates["3d"][0], day=category_dates["3d"][1], year=2021
+    ).date() and datetime.strptime(
+        os.path.basename(image).split('_')[4], "%Y%m%d"
+    ).date() <= datetime.now().replace(
+        month=category_dates["3d"][2], day=category_dates["3d"][3], year=2021
+    ).date()
+    ]
+
+    # print(len(image_filepaths))
+
+    # Iterate over all the images, excluding the last one
+    for i in range(len(image_filepaths) - 1):
+        with rasterio.open(image_filepaths[i]) as src1, rasterio.open(image_filepaths[i + 1]) as src2:
+            image1 = src1.read(1)
+            image2 = src2.read(1)
+
+            mask_array = np.logical_and(image1 != nodata_value, image2 != nodata_value)
+            average_image = np.nanmean(np.array([image1, image2]), axis=0, where=mask_array)
+
+            # Get the date of the second image
+            date_str = os.path.basename(image_filepaths[i + 1]).split('_')[4]
+            date = datetime.strptime(date_str, "%Y%m%d")
+
+            profile = src1.profile
+
+            # Save the average image
+            avg_output_filepath = os.path.join(f"{output_folder}/running_average", f'running_average_{i + 1}.tif')
+            os.makedirs(os.path.dirname(avg_output_filepath), exist_ok=True)
+            with rasterio.open(avg_output_filepath, 'w', **profile) as dst:
+                dst.write(average_image, 1)
+
+            # Convert the average image to binary
+            binary_image = average_image.copy()
+            binary_image[average_image > threshold] = 0
+            binary_image[average_image <= threshold] = 1
+
+            # Save the binary image
+            binary_output_filepath = os.path.join(f"{output_folder}/binary", f'binary_{i + 1}.tif')
+            os.makedirs(os.path.dirname(binary_output_filepath), exist_ok=True)
+            with rasterio.open(binary_output_filepath, 'w', **profile) as dst:
+                dst.write(binary_image, 1)
+
+            gdf = gdf.to_crs(src1.crs)
+
+            for idx, row in gdf.iterrows():
+                start_month, start_day, end_month, end_day = category_dates[row["CODE_BEHEE"]]
+                start_date = datetime(date.year, start_month, start_day)
+                end_date = datetime(date.year, end_month, end_day)
+
+                if start_date <= date <= end_date:
+                    # Write the binary_image array to a temporary rasterio dataset
+                    with MemoryFile() as memfile:
                         with memfile.open(**profile) as dataset:
-                            dataset.write(average_image, 1)
-                            parcel_image, _ = mask(dataset, [row['geometry']], crop=True)
-                            
-                            if parcel_image.size == 0:
-                                continue
+                            dataset.write(binary_image, 1)
+                            # Now you can pass the dataset (which is a DatasetWriter object) to the mask function
+                            parcel_binary_image, _ = rasterio.mask.mask(dataset, [row['geometry']], crop=True, nodata=np.nan)
 
-                            parcel_image_copy = parcel_image.copy()
-                            parcel_image_copy[parcel_image_copy > threshold] = 0
-                            parcel_image_copy[parcel_image_copy <= threshold] = 1
+                    if parcel_binary_image.size == 0:
+                        continue
 
-                            inundation_percentage = calculate_inundation(parcel_image_copy)
+                    inundation_percentage = calculate_inundation(parcel_binary_image)
 
-                            category_dfs[category].loc[idx, 'parcelId'] = row['OBJECTID'] if math.isnan(row['fieldid']) else row['fieldid']
-                            category_dfs[category].loc[idx, f'avg_{i + 1}'] = 1 if inundation_percentage > 60 else 0
+                    # Update column names in parcel_df with second date
+                    column_name = f'binary_{i + 1}-{date.date()}'
 
-                            minx, miny, maxx, maxy = row['geometry'].bounds
+                    df.loc[idx, 'parcelId'] = row['OBJECTID'] if math.isnan(row['fieldid']) else row['fieldid']
+                    df.loc[idx, column_name] = 1 if inundation_percentage > 60 else 0
 
-                            new_profile = profile.copy()
-                            new_profile.update({
-                                "dtype": rasterio.float32,
-                                "height": parcel_image_copy.shape[0],
-                                "width": parcel_image_copy.shape[1],
-                                "transform": rasterio.Affine.translation(minx, miny) * profile["transform"]
-                            })
+                   
+                    parcel_df.loc[idx, 'parcelId'] = row['OBJECTID'] if math.isnan(row['fieldid']) else row['fieldid']
+                    parcel_df.loc[idx, column_name] = round(inundation_percentage)
 
-                            output_filepath = os.path.join(f"{output_folder}/{category}_average_{i + 1}", f'{category}_thresholded_parcel_{idx}.tif')
-                            os.makedirs(os.path.dirname(output_filepath), exist_ok=True)
+                # else:
+                #     df.loc[idx, f'binary_{i + 1}'] = "-"
 
-                            with rasterio.open(output_filepath, 'w', **new_profile) as dst:
-                                dst.write(parcel_image_copy)
+    # Save binary dataframe to CSV and Excel files
+    df.to_csv(f'{output_folder}/output.csv', index=False)
+    df.to_excel(f'{output_folder}/output.xlsx', index=False)
 
-    for category, df in category_dfs.items():
-        df.to_csv(f'../output/{category}_output.csv', index=False)
-        df.to_excel(f'../output/{category}_output.xlsx')
-
-
-   
-
-    return category_dfs
+    # Save parcel-level inundation percentages to separate CSV and Excel files
+    parcel_df.to_csv(f'{output_folder}/parcel_inundation.csv', index=False)
+    parcel_df.to_excel(f'{output_folder}/parcel_inundation.xlsx', index=False)
 
 
 
 
 
 threshold_value = average_threshold()
-
 calculate_inundation_all_images(image_folder, shapefile_path, output_path, threshold_value)
+
+
 

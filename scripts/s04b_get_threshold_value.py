@@ -15,6 +15,8 @@ from sklearn.linear_model import LogisticRegression
 import json
 from shapely.geometry import mapping
 from sklearn.metrics import accuracy_score
+from s04a_threshold_image_average import calc_image_average
+
 
 
 filename_brp_sample ='../data/thresh_stuff/training/brp/03_brp_sample.shp'
@@ -28,7 +30,7 @@ mapping_dict = {
     'average_1.tif': 'Water20210226.shp',
     'average_2.tif': 'Water20210331.shp',
     'average_3.tif': 'Water20210427.shp',
-    'average_4.tif': 'Water202103530.shp',
+    'average_4.tif': 'Water20210530.shp',
     'average_5.tif': 'Water20210616.shp'
 }
 
@@ -51,7 +53,7 @@ def load_raster(ds):
     return ds.read(1)
 
 
-def get_threshold(water, sar, brp):
+def get_threshold(water, sar, brp, threshold):
     gdf_waterpoly = gpd.read_file(water).set_crs('EPSG:28992').to_crs('EPSG:32631')
     gdf_brp = gpd.read_file(brp)
     sar_vv_ds = rasterio.open(sar)
@@ -60,15 +62,19 @@ def get_threshold(water, sar, brp):
     arr_water_vv = extract_raster_value(gdf_waterpoly, sar_vv_ds)
     arr_brp_vv = extract_raster_value(gdf_brp, sar_vv_ds)
 
-    print(f"Total BRP Pixels {len(arr_brp_vv)}")
+    # print(f"Total BRP Pixels {len(arr_brp_vv)}")
+
+    # Calculate min and max of the image data
+    min_val = np.nanmin(sar_vv)
+    max_val = np.nanmax(sar_vv)
 
 
     # Take random subset of arr_brp_vv with length equal to arr_water_vv
     if len(arr_brp_vv) > len(arr_water_vv):
         arr_brp_vv = np.random.choice(arr_brp_vv, len(arr_water_vv), replace=False)
 
-    print(f"Total Water Pixels {len(arr_water_vv)}")
-    print(f"Total BRP Pixels (random sub samples) {len(arr_brp_vv)}")
+    # print(f"Total Water Pixels {len(arr_water_vv)}")
+    # print(f"Total BRP Pixels (random sub samples) {len(arr_brp_vv)}")
 
     sar_vv_ds.close()
 
@@ -92,7 +98,10 @@ def get_threshold(water, sar, brp):
     print("Accuracy:", accuracy)
 
     def decision_function(x, model=model):
-        return sigmoid(x * model.coef_[0] + model.intercept_[0]) - 0.5
+        if x < min_val or x > max_val:
+            return np.inf
+        return sigmoid(x * model.coef_[0] + model.intercept_[0]) - 0.3
+
 
     initial_guess = -19
     try:
@@ -106,7 +115,12 @@ def get_threshold(water, sar, brp):
     return threshold[0], len(arr_water_vv)
 
 
-def average_threshold():
+def average_threshold(threshold=0.7):
+
+    # calculate the normal averages first
+    calc_image_average()
+
+
     all_thresholds = []
     all_pixel_counts = []
 
@@ -116,7 +130,7 @@ def average_threshold():
 
         if os.path.isfile(sar_path) and os.path.isfile(water_path):
             print(f'Processing: {sar}')
-            threshold, pixel_count = get_threshold(water_path, sar_path, filename_brp_sample)
+            threshold, pixel_count = get_threshold(water_path, sar_path, filename_brp_sample, threshold)
             all_thresholds.append(threshold)
             all_pixel_counts.append(pixel_count)
         else:
