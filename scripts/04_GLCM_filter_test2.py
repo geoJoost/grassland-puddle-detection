@@ -11,10 +11,11 @@ from scipy.interpolate import RectBivariateSpline
 from numpy.lib.stride_tricks import as_strided as ast
 import dask.array as da
 from joblib import Parallel, delayed, cpu_count
-import os
+import geopandas as gpd
 from skimage.feature import graycomatrix, graycoprops
 #normalize
 from sklearn.preprocessing import MinMaxScaler
+import rasterio
 
 def im_resize(im,Nx,Ny):
     '''
@@ -184,85 +185,107 @@ def CreateRaster(xx,yy,std,gt,proj,driverName,outFile):
 
 
 #Stuff to change
+# =============================================================================
+# 
+# parcels = gpd.read_file("input/Shapes/gewaspercelen_2021_S2Tiles_GWT_BF12_AHN2.shp")
+# 
+# # Apply the filters to the DataFrame
+# parcels = parcels.loc[(parcels['provincie'] == 'Friesland') & (parcels['cat_gewasc'] == 'Grasland') | 
+#                       (parcels['provincie'] == 'Groningen') & (parcels['cat_gewasc'] == 'Grasland')]
+# parcels = parcels.to_crs(epsg=32631)
+# 
+# with rasterio.open("data/averages/average_1.tif") as src:
+#     out_image, out_transform = rasterio.mask.mask(src, parcels.geometry, crop=True, nodata=999, all_touched = True)
+#     out_meta = src.meta
+# 
+# out_meta.update({"driver": "GTiff",
+#                   "height": out_image.shape[1],
+#                   "width": out_image.shape[2],
+#                   "transform": out_transform})
+# 
+# 
+# with rasterio.open("data/averages/cropped_average_1.tif", "w", **out_meta) as dest:
+#     dest.write(out_image)
+# =============================================================================
 
-if __name__ == '__main__':  
-    win_sizes = [7]
-    for win_size in win_sizes[:]:   
-        in_raster = "output/02_Sigma0_dB_VV_20210317_compressed_glanlb_clip.tif"#Path to input raster
-        win = win_size
-        meter = str(win/4)
 
-        #Define output file names
-        contFile = "output/contFile.tif"
-        dissFile = "output/dissFile.tif"
-        homoFile = "output/homoFile.tif"
-        energyFile = "output/energyFile.tif"
-        corrFile = "output/corrFile.tif"
-        ASMFile = "output/ASMFile.tif"
+win_sizes = [7]
+for win_size in win_sizes[:]:   
+    in_raster = "data/averages/average_1.tif"#Path to input raster
+    win = win_size
+    meter = str(win/4)
+
+    #Define output file names
+    contFile = "output/average_1_contFile.tif"
+    dissFile = "output/average_1_dissFile.tif"
+    homoFile = "output/average_1_homoFile.tif"
+    energyFile = "output/average_1_energyFile.tif"
+    corrFile = "output/average_1_corrFile.tif"
+    ASMFile = "output/average_1_ASMFile.tif"
 
 
 
-        merge, xx, yy, gt = read_raster(in_raster)
+    merge, xx, yy, gt = read_raster(in_raster)
 
-        #merge[np.isnan(merge)] = 0
+    #merge[np.isnan(merge)] = 0
 ###
-        Z,ind = sliding_window(merge,(win,win),(win,win))
+    Z,ind = sliding_window(merge,(win,win),(win,win))
 
-        Ny, Nx = np.shape(merge)
+    Ny, Nx = np.shape(merge)
 
-        w = Parallel(n_jobs = cpu_count(), verbose=0)(delayed(p_me)(Z[k]) for k in list(range(len(Z))))#xrange(len(Z)))
+    w = Parallel(n_jobs = cpu_count(), verbose=0)(delayed(p_me)(Z[k]) for k in list(range(len(Z))))#xrange(len(Z)))
 
-        cont = [a[0] for a in w]
-        diss = [a[1] for a in w]
-        homo = [a[2] for a in w]
-        eng  = [a[3] for a in w]
-        corr = [a[4] for a in w]
-        ASM_  = [a[5] for a in w]
-        
-        #cont = [np.mean(array) for array in cont]
-        #diss = [np.mean(array) for array in diss]
-        #homo = [np.mean(array) for array in homo]
-        #eng = [np.mean(array) for array in eng]
-        #corr = [np.mean(array) for array in corr]
-        #ASM_ = [np.mean(array) for array in ASM_]
-        
-        #Reshape to match number of windows
-        plt_cont = np.reshape(cont , ( ind[0], ind[1] ) )
-        plt_diss = np.reshape(diss , ( ind[0], ind[1] ) )
-        plt_homo = np.reshape(homo , ( ind[0], ind[1] ) )
-        plt_eng = np.reshape(eng , ( ind[0], ind[1] ) )
-        plt_corr = np.reshape(corr , ( ind[0], ind[1] ) )
-        plt_ASM =  np.reshape(ASM_ , ( ind[0], ind[1] ) )
-        del cont, diss, homo, eng, corr, ASM
+    cont = [a[0] for a in w]
+    diss = [a[1] for a in w]
+    homo = [a[2] for a in w]
+    eng  = [a[3] for a in w]
+    corr = [a[4] for a in w]
+    ASM_  = [a[5] for a in w]
+    
+    #cont = [np.mean(array) for array in cont]
+    #diss = [np.mean(array) for array in diss]
+    #homo = [np.mean(array) for array in homo]
+    #eng = [np.mean(array) for array in eng]
+    #corr = [np.mean(array) for array in corr]
+    #ASM_ = [np.mean(array) for array in ASM_]
+    
+    #Reshape to match number of windows
+    plt_cont = np.reshape(cont , ( ind[0], ind[1] ) )
+    plt_diss = np.reshape(diss , ( ind[0], ind[1] ) )
+    plt_homo = np.reshape(homo , ( ind[0], ind[1] ) )
+    plt_eng = np.reshape(eng , ( ind[0], ind[1] ) )
+    plt_corr = np.reshape(corr , ( ind[0], ind[1] ) )
+    plt_ASM =  np.reshape(ASM_ , ( ind[0], ind[1] ) )
+    del cont, diss, homo, eng, corr, ASM_
 
-        #Resize Images to receive texture and define filenames
-        contrast = im_resize(plt_cont,Nx,Ny)
-        contrast[merge==0]=np.nan
-        dissimilarity = im_resize(plt_diss,Nx,Ny)
-        dissimilarity[merge==0]=np.nan    
-        homogeneity = im_resize(plt_homo,Nx,Ny)
-        homogeneity[merge==0]=np.nan
-        energy = im_resize(plt_eng,Nx,Ny)
-        energy[merge==0]=np.nan
-        correlation = im_resize(plt_corr,Nx,Ny)
-        correlation[merge==0]=np.nan
-        ASM = im_resize(plt_ASM,Nx,Ny)
-        ASM[merge==0]=np.nan
-        del plt_cont, plt_diss, plt_homo, plt_eng, plt_corr, plt_ASM
+    #Resize Images to receive texture and define filenames
+    contrast = im_resize(plt_cont,Nx,Ny)
+    contrast[merge==0]=np.nan
+    dissimilarity = im_resize(plt_diss,Nx,Ny)
+    dissimilarity[merge==0]=np.nan    
+    homogeneity = im_resize(plt_homo,Nx,Ny)
+    homogeneity[merge==0]=np.nan
+    energy = im_resize(plt_eng,Nx,Ny)
+    energy[merge==0]=np.nan
+    correlation = im_resize(plt_corr,Nx,Ny)
+    correlation[merge==0]=np.nan
+    ASM = im_resize(plt_ASM,Nx,Ny)
+    ASM[merge==0]=np.nan
+    del plt_cont, plt_diss, plt_homo, plt_eng, plt_corr, plt_ASM
 
 
-        del w,Z,ind,Ny,Nx
+    del w,Z,ind,Ny,Nx
 
-        driverName= 'GTiff'    
-        epsg_code=32631
-        proj = osr.SpatialReference()
-        proj.ImportFromEPSG(epsg_code)
+    driverName= 'GTiff'    
+    epsg_code=32631
+    proj = osr.SpatialReference()
+    proj.ImportFromEPSG(epsg_code)
 
-        CreateRaster(xx, yy, contrast, gt, proj,driverName,contFile) 
-        CreateRaster(xx, yy, dissimilarity, gt, proj,driverName,dissFile)
-        CreateRaster(xx, yy, homogeneity, gt, proj,driverName,homoFile)
-        CreateRaster(xx, yy, energy, gt, proj,driverName,energyFile)
-        CreateRaster(xx, yy, correlation, gt, proj,driverName,corrFile)
-        CreateRaster(xx, yy, ASM, gt, proj,driverName,ASMFile)
+    CreateRaster(xx, yy, contrast, gt, proj,driverName,contFile) 
+    CreateRaster(xx, yy, dissimilarity, gt, proj,driverName,dissFile)
+    CreateRaster(xx, yy, homogeneity, gt, proj,driverName,homoFile)
+    CreateRaster(xx, yy, energy, gt, proj,driverName,energyFile)
+    CreateRaster(xx, yy, correlation, gt, proj,driverName,corrFile)
+    CreateRaster(xx, yy, ASM, gt, proj,driverName,ASMFile)
 
-        del contrast, merge, xx, yy, gt, meter, dissimilarity, homogeneity, energy, correlation, ASM
+    del contrast, merge, xx, yy, gt, meter, dissimilarity, homogeneity, energy, correlation, ASM

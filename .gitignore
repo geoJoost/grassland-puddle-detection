@@ -30,6 +30,7 @@ data
 output
 myenv
 input
+NOTUSED_input
 
 # pdf files
 **.pdf
