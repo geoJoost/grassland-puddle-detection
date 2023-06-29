@@ -172,6 +172,8 @@ def clip_raster_mixedpixel(raster_fp, vector_fp, output_fp):
 
     # Create filepath
     fp_anlb = os.path.join(output_folder + vector_fp)
+    
+    print(fp_anlb)
 
     output_raster_path = output_fp
     
@@ -346,8 +348,8 @@ compress_images(src_dir, out_dir)
 #%% Clip both mixed pixels and pure pixels 
 
 # Mixed pixel clipping
-process_rasters("VV", "mp", "01_ANLB_filtered.shp", os.path.join(data_folder, "S1_VV_filtered/", "*.tif"))
-process_rasters("VH", "mp", "01_ANLB_filtered.shp", os.path.join(data_folder, "S1_VH_filtered/", "*.tif"))
+process_rasters("VV", "mp", "01_anlb_drygrass_merged.shp", os.path.join(data_folder, "S1_VV_filtered/", "*.tif"))
+#process_rasters("VH", "mp", "01_ANLB_filtered.shp", os.path.join(data_folder, "S1_VH_filtered/", "*.tif"))
 
 # Pure pixel clipping
 #src_raster_mp = mixed_pixel_fp
