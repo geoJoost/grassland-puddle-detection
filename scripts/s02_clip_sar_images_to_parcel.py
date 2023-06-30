@@ -11,7 +11,6 @@ import pandas as pd
 import shutil
 
 import geopandas as gpd
-import fiona
 import rasterio
 import rasterio.mask
 
@@ -26,24 +25,6 @@ output_folder = r"output/"
 
 #%% Functions
 
-def filterANLB(filepath, code_list): # Can be imported from script 01
-    """
-    Function that filters the ANLB data based on the subsidy code
-
-    Parameters
-    ----------
-    filepath : path to the ANLB_2021.shp
-    code_list : subsidy code (can be found in the Readme.txt)
-
-    Returns
-    -------
-    ANLB : filtered ANLB data
-
-    """
-    ANLB = gpd.read_file(filepath)
-    # select plasdras areas
-    ANLB = ANLB[ANLB["CODE_BEHEE"].isin(code_list)]
-    return ANLB
 
 def filter_og_SAR(infile, polarisation, fp_csv):
     """
@@ -168,8 +149,6 @@ def clip_raster_mixedpixel(raster_fp, vector_fp, output_fp):
 
     """
 
-    src_raster_path = raster_fp
-
     # Create filepath
     fp_anlb = os.path.join(output_folder + vector_fp)
     
@@ -190,7 +169,7 @@ def clip_raster_mixedpixel(raster_fp, vector_fp, output_fp):
         print("Filtered ANLB file does not exist. Please run script #1")
         sys.exit()     
 
-    with rasterio.open(src_raster_path) as src:
+    with rasterio.open(raster_fp) as src:
 
         out_image, out_transform = rasterio.mask.mask(src, shapes, crop=True, nodata=999, all_touched = True)
         out_meta = src.meta
@@ -226,21 +205,15 @@ def clip_raster_purepixel(raster_fp, vector_fp, output_fp):
         DESCRIPTION.
 
     """
-    
-
-    src_raster_path = raster_fp
-
-    shp_file_path = vector_fp
-
-    output_raster_path = output_fp    
+      
     
     # Read in the shapefile
-    gdf = gpd.read_file(shp_file_path).to_crs(32631)
+    gdf = gpd.read_file(vector_fp).to_crs(32631)
     
     # Flatten the geometry into GeoJSON-like format as required by rasterio.mask()
     shapes = gdf[['geometry']].values.flatten()
 
-    with rasterio.open(src_raster_path) as src:
+    with rasterio.open(raster_fp) as src:
 
         out_image, out_transform = rasterio.mask.mask(src, shapes, nodata=999, all_touched = True, invert = True)
         out_meta = src.meta
@@ -251,10 +224,10 @@ def clip_raster_purepixel(raster_fp, vector_fp, output_fp):
                       "transform": out_transform})
 
 
-    with rasterio.open(output_raster_path, "w", **out_meta) as dest:
+    with rasterio.open(output_fp, "w", **out_meta) as dest:
         dest.write(out_image)
         
-        print(f"{output_raster_path} was written to file")
+        print(f"{output_fp} was written to file")
     
 def process_rasters(polarisation, clipfunction, shapefile, source_folder):
     """
@@ -318,28 +291,13 @@ def process_rasters(polarisation, clipfunction, shapefile, source_folder):
         
 #%% Filter from original S1 data folder, only the backscatter .tif files obtained via central pass during study period. 
 
-"""
-# Create list of the dates for which images should be filtered for
-s1_pass_info_fp = os.path.join(data_folder + "S1/Sentinel_1A_2021_overview.csv") #Read pass overview csv file
-s1_pass_info_df = pd.read_csv(s1_pass_info_fp)
-s1_central_pass_dates = s1_pass_info_df.loc[s1_pass_info_df['Overpass'] == 'central', 'Date'].tolist() # filter for central pass
-s1_cp_jan_aug = [str(date) for date in s1_central_pass_dates if date <= 20210820] # filter for january-august
+filter_og_SAR("data/S1/", "VV", "S1/Sentinel_1A_2021_overview.csv") # VV polarisation
+filter_og_SAR("data/S1/", "VH", "S1/Sentinel_1A_2021_overview.csv") # VH polarisation
 
-
-# Filter images using filter_og_SAR function
-infile = os.path.join(data_folder + "S1/")
-outfile = os.path.join(data_folder + "S1_VV_filtered")
-
-polarisation = 'VV'
-"""
-#filter_og_SAR(infile, outfile, polarisation, "S1/Sentinel_1A_2021_overview.csv")
-filter_og_SAR("data/S1/", "VV", "S1/Sentinel_1A_2021_overview.csv")
-filter_og_SAR("data/S1/", "VH", "S1/Sentinel_1A_2021_overview.csv")
-
-#%% Compress all .tif images provided in separate date subdirectories and store all outputs in same file
+#%% OPTIONAL : Compress all .tif images provided in separate date subdirectories and store all outputs in same file
 # define source and output directories
 """
-UNUSED COMPRESSION
+OPTIONAL COMPRESSION
 src_dir = data_folder + "S1A_VV_filtered" 
 out_dir = data_folder + "S1A_VV_filtered_compressed"
 compress_images(src_dir, out_dir) 
@@ -349,9 +307,12 @@ compress_images(src_dir, out_dir)
 
 # Mixed pixel clipping
 process_rasters("VV", "mp", "01_anlb_drygrass_merged.shp", os.path.join(data_folder, "S1_VV_filtered/", "*.tif"))
-#process_rasters("VH", "mp", "01_ANLB_filtered.shp", os.path.join(data_folder, "S1_VH_filtered/", "*.tif"))
+process_rasters("VH", "mp", "01_anlb_drygrass_merged.shp", os.path.join(data_folder, "S1_VH_filtered/", "*.tif"))
 
-# Pure pixel clipping
+
+"""
+ OPTIONAL: Pure pixel clipping in case SAR images have to clipped to only pixels lying completely within parcel boundaries
+ 
 #src_raster_mp = mixed_pixel_fp
 #anlb_perimeter_fp = data_folder + "02_anlb_perimeter.shp"
 #pure_pixel_fp = output_folder + "02_VV_purepixel_clipped\\"
@@ -365,14 +326,5 @@ anlb_perimeter.to_file(fp_anlb_perimeter)
 process_rasters("VV", "pp", fp_anlb_perimeter, os.path.join(output_folder, "02_VV_mp_clipped/", "*.tif"))
 process_rasters("VH", "pp", fp_anlb_perimeter, os.path.join(output_folder, "02_VH_mp_clipped/", "*.tif"))
 
-# Clipping SAR data to grassland parcels and ANLB parcels for Marnic
 """
-TODO: Add function to merge the ANLB and BRP data for the SAR texture. If this part of the script is used in the end.
-
-src_raster = "D:\RGIC23GR10\data\S1_VV_comp_filtered\Sigma0_dB_VV_20210317_compressed.tif"
-grassland_anlb = os.path.join(output_folder + "02_aoi_grassland_parcels_merged.shp")
-output_raster_fp = os.path.join(output_folder + "02_Sigma0_dB_VV_20210317_compressed_glanlb_clip.tif")
-clip_raster_mixedpixel(src_raster, grassland_anlb, output_raster_fp)
-"""
-
 
