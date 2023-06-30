@@ -10,10 +10,19 @@ import math
 from s04b_get_threshold_value import average_threshold
 from rasterio.io import MemoryFile
 import sys
+import argparse
+
+# create the parser
+parser = argparse.ArgumentParser(description='Puddles')
+
+# add the argument
+parser.add_argument('--threshold_value', type=float, help='Threshold value. Defaults to 0.5 if nothing is provided')
+
+# parse the arguments
+args = parser.parse_args()
 
 
-# # Getting the arguments
-# arg1 = sys.argv[1]
+
 
 
 output_path = '../output'
@@ -21,11 +30,43 @@ image_folder = '../data/02_VV_mp_clipped'
 shapefile_path = '../data/01_SUBSIDISED_FIELDS/01_subsidised_field.shp'
 
 
-def calculate_inundation(thresholded_image):
-    inundated_pixels = np.count_nonzero(thresholded_image == 1)
-    total_pixels = np.size(thresholded_image)
-    inundation_percentage = (inundated_pixels / total_pixels) * 100
-    return inundation_percentage
+# def calculate_inundation(thresholded_image, id):
+#     # Flatten the array
+#     flattened_arr = thresholded_image.flatten()
+
+#     # Remove nan values
+#     img = flattened_arr[~np.isnan(flattened_arr)]
+
+#     inundated_pixels = np.count_nonzero(img == 1)
+#     total_pixels = np.size(img)
+#     print(f"parce id: {id}")
+#     print(thresholded_image)
+#     print(img)
+#     print(f"Total pixels in parcel: {total_pixels}")
+#     print(f"inundated pixels in parcel: {inundated_pixels}")
+#     if(total_pixels == 0):
+#         return 200
+#     else:
+#         inundation_percentage = (inundated_pixels / total_pixels) * 100
+#         return inundation_percentage
+    
+
+def calculate_inundation(thresholded_image, id):
+    # Replace nan values with 1
+    img = np.nan_to_num(thresholded_image, nan=1)
+
+    inundated_pixels = np.count_nonzero(img == 1)
+    total_pixels = np.size(img)
+    print(f"parcel id: {id}")
+    print(thresholded_image)
+    print(img)
+    print(f"Total pixels in parcel: {total_pixels}")
+    print(f"inundated pixels in parcel: {inundated_pixels}")
+    if(total_pixels == 0):
+        return 200
+    else:
+        inundation_percentage = (inundated_pixels / total_pixels) * 100
+        return inundation_percentage
 
 
 def calculate_inundation_all_images(image_folder, shapefile_filepath, output_folder, threshold):
@@ -78,12 +119,34 @@ def calculate_inundation_all_images(image_folder, shapefile_filepath, output_fol
         with rasterio.open(image_filepaths[i]) as src1, rasterio.open(image_filepaths[i + 1]) as src2:
             image1 = src1.read(1)
             image2 = src2.read(1)
+            
+            # # Create a mask where True corresponds to the pixels you want to ignore
+            # mask_array = np.logical_or(image1 == nodata_value, image2 == nodata_value)
 
-            mask_array = np.logical_and(image1 != nodata_value, image2 != nodata_value)
-            average_image = np.nanmean(np.array([image1, image2]), axis=0, where=mask_array)
+            # # Use this mask to create masked versions of your images
+            # masked_image1 = np.ma.array(image1, mask=mask_array)
+            # masked_image2 = np.ma.array(image2, mask=mask_array)
+
+            # Now calculate the mean
+            # average_image = np.ma.mean(np.array([masked_image1, masked_image2]), axis=0)
+
+            # Finally, convert back to a regular numpy array and fill the ignored places with your nodata_value
+            # average_image = np.ma.filled(average_image, fill_value=nodata_value)
+
+            # average_image = np.mean([image1, image2], axis=0)
+
+            # Convert nodata values to np.nan
+            image_one = np.where(image1 == nodata_value, np.nan, image1)
+            image_two = np.where(image2 == nodata_value, np.nan, image2)
+
+            # Compute the average while ignoring np.nan values
+            average_image = np.nanmean([image_one, image_two], axis=0)
+
 
             # Get the date of the second image
+            # date_str = os.path.basename(image_filepaths[i + 1]).split('_')[3].split('.')[0]
             date_str = os.path.basename(image_filepaths[i + 1]).split('_')[4]
+
             date = datetime.strptime(date_str, "%Y%m%d")
 
             profile = src1.profile
@@ -96,8 +159,10 @@ def calculate_inundation_all_images(image_folder, shapefile_filepath, output_fol
 
             # Convert the average image to binary
             binary_image = average_image.copy()
-            binary_image[average_image > threshold] = 0
-            binary_image[average_image <= threshold] = 1
+            binary_image[binary_image > threshold] = 0
+            binary_image[binary_image <= threshold] = 1
+
+            
 
             # Save the binary image
             binary_output_filepath = os.path.join(f"{output_folder}/binary", f'binary_{i + 1}.tif')
@@ -123,35 +188,36 @@ def calculate_inundation_all_images(image_folder, shapefile_filepath, output_fol
                     if parcel_binary_image.size == 0:
                         continue
 
-                    inundation_percentage = calculate_inundation(parcel_binary_image)
+                    inundation_percentage = calculate_inundation(binary_image, int(row['OBJECTID']))
+
 
                     # Update column names in parcel_df with second date
-                    column_name = f'binary_{i + 1}-{date.date()}'
+                    column_name = f'{date.date()}'
 
-                    df.loc[idx, 'parcelId'] = row['OBJECTID'] if math.isnan(row['fieldid']) else row['fieldid']
+                    df.loc[idx, 'OBJECTID'] = int(row['OBJECTID']) 
+                    # if math.isnan(row['fieldid']) else int(row['fieldid'])
                     df.loc[idx, column_name] = 1 if inundation_percentage > 60 else 0
 
                    
-                    parcel_df.loc[idx, 'parcelId'] = row['OBJECTID'] if math.isnan(row['fieldid']) else row['fieldid']
-                    parcel_df.loc[idx, column_name] = round(inundation_percentage)
+                    parcel_df.loc[idx, 'OBJECTID'] = int((row['OBJECTID'])) 
+                    # if math.isnan(row['fieldid']) else int(row['fieldid'])
+                    parcel_df.loc[idx, column_name] = int(round(inundation_percentage))
 
                 # else:
                 #     df.loc[idx, f'binary_{i + 1}'] = "-"
 
+
     # Save binary dataframe to CSV and Excel files
-    df.to_csv(f'{output_folder}/output.csv', index=False)
-    df.to_excel(f'{output_folder}/output.xlsx', index=False)
+    df.to_csv(f'{output_folder}/{args.threshold_value}-output.csv', index=False)
+    df.to_excel(f'{output_folder}/{args.threshold_value}-output.xlsx', index=False)
 
     # Save parcel-level inundation percentages to separate CSV and Excel files
-    parcel_df.to_csv(f'{output_folder}/parcel_inundation.csv', index=False)
-    parcel_df.to_excel(f'{output_folder}/parcel_inundation.xlsx', index=False)
+    parcel_df.to_csv(f'{output_folder}/{args.threshold_value}-parcel_inundation.csv', index=False)
+    parcel_df.to_excel(f'{output_folder}/{args.threshold_value}-parcel_inundation.xlsx', index=False)
 
 
 
 
 
-threshold_value = average_threshold()
+threshold_value = average_threshold(args.threshold_value)
 calculate_inundation_all_images(image_folder, shapefile_path, output_path, threshold_value)
-
-
-

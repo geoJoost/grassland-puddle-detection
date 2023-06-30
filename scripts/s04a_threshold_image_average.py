@@ -33,3 +33,4 @@ def calc_image_average():
                 dst.write(average_image, 1)
 
 
+calc_image_average()
