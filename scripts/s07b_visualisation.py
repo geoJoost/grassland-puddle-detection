@@ -5,13 +5,10 @@ Created on Mon Jun 26 15:00:16 2023
 @author: Marnic
 """
 
-import dash
-import plotly.graph_objects as go
 import geopandas as gpd
 import pandas as pd
 from dash import Dash, dcc, html, Input, Output
 import plotly.express as px
-import plotly.io as io
 
 # Read file
 subsidised = gpd.read_file('data/07_fields_subsidised.shp')
@@ -36,7 +33,7 @@ fig.update_layout(mapbox=dict(
     center=dict(lat=52.1326, lon=5.2913),
     zoom=7))
 
-#Increase width of the lines and give color (blue)
+# Increase width of the lines and give color (blue)
 fig.update_traces(marker_line={'width': 2})
 fig.update_traces(marker_line={'width': 8, 'color': 'rgb(2,48,71)'})
 
@@ -94,6 +91,7 @@ app.layout = html.Div(
     ],
     style={"display": "flex", "flex-wrap": "wrap"},
 )
+
 
 # Callback to update the graph based on a polygon click
 @app.callback(
