@@ -96,5 +96,13 @@ run_script("s04c_thresholding.py", ["--threshold_value=0.7"])
 
 run_script("s04d_validation.py", ["--threshold_value=0.7"])
 
+run_script("s04c_thresholding.py", ["--threshold_value=0.5"])
+
+run_script("s04d_validation.py", ["--threshold_value=0.5"])
+
+run_script("s04c_thresholding.py", ["--threshold_value=0.3"])
+
+run_script("s04d_validation.py", ["--threshold_value=0.3"])
+
 
 

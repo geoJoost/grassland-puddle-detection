@@ -26,29 +26,12 @@ args = parser.parse_args()
 
 
 output_path = '../output'
-image_folder = '../data/02_VV_mp_clipped'
+# To run the script for VV-polarization, change the line below to ***image_folder = '../data/02_VV_mp_clipped'****
+image_folder = '../data/02_VH_mp_clipped'
 shapefile_path = '../data/01_SUBSIDISED_FIELDS/01_subsidised_field.shp'
 
 
-# def calculate_inundation(thresholded_image, id):
-#     # Flatten the array
-#     flattened_arr = thresholded_image.flatten()
 
-#     # Remove nan values
-#     img = flattened_arr[~np.isnan(flattened_arr)]
-
-#     inundated_pixels = np.count_nonzero(img == 1)
-#     total_pixels = np.size(img)
-#     print(f"parce id: {id}")
-#     print(thresholded_image)
-#     print(img)
-#     print(f"Total pixels in parcel: {total_pixels}")
-#     print(f"inundated pixels in parcel: {inundated_pixels}")
-#     if(total_pixels == 0):
-#         return 200
-#     else:
-#         inundation_percentage = (inundated_pixels / total_pixels) * 100
-#         return inundation_percentage
     
 
 def calculate_inundation(thresholded_image, id):
@@ -58,8 +41,8 @@ def calculate_inundation(thresholded_image, id):
     inundated_pixels = np.count_nonzero(img == 1)
     total_pixels = np.size(img)
     print(f"parcel id: {id}")
-    print(thresholded_image)
-    print(img)
+    # print(thresholded_image)
+    # print(img)
     print(f"Total pixels in parcel: {total_pixels}")
     print(f"inundated pixels in parcel: {inundated_pixels}")
     if(total_pixels == 0):
@@ -188,7 +171,7 @@ def calculate_inundation_all_images(image_folder, shapefile_filepath, output_fol
                     if parcel_binary_image.size == 0:
                         continue
 
-                    inundation_percentage = calculate_inundation(binary_image, int(row['OBJECTID']))
+                    inundation_percentage = calculate_inundation(parcel_binary_image, int(row['OBJECTID']))
 
 
                     # Update column names in parcel_df with second date

@@ -3,7 +3,10 @@ import glob
 import os
 
 def calc_image_average():
-    image_filepaths = sorted(glob.glob(f"../data/thresh_stuff/training/sar/*.tif"))
+    # To run the script for VV-polarization, change the line below to
+    # image_filepaths = sorted(glob.glob(f"../data/thresh_stuff/training/vvsar/*.tif"))
+
+    image_filepaths = sorted(glob.glob(f"../data/thresh_stuff/training/vhsar/*.tif"))
 
     for i in range(0, len(image_filepaths) - 1, 2):
         with rasterio.open(image_filepaths[i]) as src1, rasterio.open(image_filepaths[min(i + 1, len(image_filepaths) - 1)]) as src2:
