@@ -16,6 +16,19 @@ import json
 from shapely.geometry import mapping
 from sklearn.metrics import accuracy_score
 from s04b_get_threshold_value import average_threshold
+import argparse
+
+# create the parser
+parser = argparse.ArgumentParser(description='Puddles')
+
+# add the argument
+parser.add_argument('--threshold_value', type=float, help='Threshold value. Defaults to 0.5 if nothing is provided')
+
+# parse the arguments
+args = parser.parse_args()
+
+# # access the argument
+# print(args.threshold_value)
 
 filename_brp_sample = '../data/thresh_stuff/training/brp/01_brp_dry_grass_sample.shp'
 fp_waterpoly = '../data/thresh_stuff/training/water'
@@ -64,7 +77,7 @@ def get_pixels(water, sar, brp):
     return arr_water_vv, arr_brp_vv
 
 def binary_and_confusion():
-    threshold_value = average_threshold()
+    threshold_value = average_threshold(threshold=args.threshold_value)
     actual_labels = []
     predicted_labels = []
     image_counter = 1
@@ -133,13 +146,12 @@ def binary_and_confusion():
     metrics = {'Precision': precision, 'Recall': recall, 'Accuracy': accuracy}
 
     # Save the confusion matrix to a CSV file
-    confusion_matrix.to_csv("../output/confusion_matrix.csv")
+    confusion_matrix.to_csv(f"../output/{args.threshold_value}-confusion_matrix.csv")
 
     # Save the metrics to the same CSV file
-    with open("../output/confusion_matrix.csv", 'a') as f:
+    with open(f"../output/{args.threshold_value}-confusion_matrix.csv", 'a') as f:
         f.write("\n\nMetrics:\n")
         for key, val in metrics.items():
             f.write(f"{key},{val}\n")
 
 binary_and_confusion()
-

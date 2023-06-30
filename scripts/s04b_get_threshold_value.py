@@ -17,6 +17,8 @@ from shapely.geometry import mapping
 from sklearn.metrics import accuracy_score
 from s04a_threshold_image_average import calc_image_average
 
+np.random.seed(42)
+
 
 
 filename_brp_sample ='../data/thresh_stuff/training/brp/03_brp_sample.shp'
@@ -87,7 +89,7 @@ def get_threshold(water, sar, brp, threshold):
     # Split the data into train and test sets
     X_train, X_test, y_train, y_test = train_test_split(features.reshape(-1, 1), labels, test_size=0.2, random_state=42)
 
-    model = LogisticRegression()
+    model = LogisticRegression(random_state=42)
     model.fit(X_train, y_train.ravel())
 
     # Predict the labels of the test set
@@ -100,7 +102,7 @@ def get_threshold(water, sar, brp, threshold):
     def decision_function(x, model=model):
         if x < min_val or x > max_val:
             return np.inf
-        return sigmoid(x * model.coef_[0] + model.intercept_[0]) - 0.3
+        return sigmoid(x * model.coef_[0] + model.intercept_[0]) - threshold
 
 
     initial_guess = -19
@@ -116,10 +118,6 @@ def get_threshold(water, sar, brp, threshold):
 
 
 def average_threshold(threshold=0.7):
-
-    # calculate the normal averages first
-    calc_image_average()
-
 
     all_thresholds = []
     all_pixel_counts = []
@@ -147,5 +145,4 @@ def average_threshold(threshold=0.7):
     return average_threshold
 
 
-# average_threshold()
 
