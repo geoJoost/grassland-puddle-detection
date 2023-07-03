@@ -24,7 +24,7 @@ I -- Visualization --> J[s06]
 
 The following section outlines what each script does and what modifications users might want to make.
 
-**N.B:** Calling the `main.py` script runs the entire workflow explained below
+**NOTE:** Calling the `main.py` script runs the entire workflow explained below
 
 ### s01_preprocess_vector_data.py
 
@@ -74,6 +74,8 @@ The script either runs on the VV or the VH images. Change polarisation in script
 
 This script contains the logic for calculating the average of all the images in an input folder. It employs a moving average of two so for example if your input folder contains four images. An output of two images should be expected where output 1 is the average of images 1 and 2 and output 2 is the average of images 3 and 4.
 
+**NOTE:** The `image_filepaths` variable should be changed to run the script for a different polarization (see comment in script also). All outputs are overwritten for new polarization.
+
 **Output Folder(s)**
 
 - _../data/thresholding_data/output/averages_
@@ -90,6 +92,8 @@ This script contains the logic for calculating the optimal threshold value used 
 
 The script takes as input a series of satellite images and applies a threshold to convert them into binary images, where pixels are categorized as either "water" or "non-water" based on their backscatter values.
 
+**NOTE:** The `image_folder` variable should be changed to run the script for a different polarization (see comment in script also). All outputs are overwritten for new polarization.
+
 **Output Folder(s)**
 
 - _../output_
@@ -102,4 +106,4 @@ This script validates the accuracy of the thresholding algorithm built in `s04c_
 
 **Output Folder(s)**
 
-1.  _../output_
+- _../output_
