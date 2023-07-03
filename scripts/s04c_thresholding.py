@@ -26,8 +26,8 @@ args = parser.parse_args()
 
 
 output_path = '../output'
-# To run the script for VV-polarization, change the line below to ***image_folder = '../data/02_VV_mp_clipped'****
-image_folder = '../data/02_VH_mp_clipped'
+# To run the script for VV-polarization, change the line below to *** image_folder = '../data/02_VV_mp_clipped' ****
+image_folder = '../data/02_VV_mp_clipped'
 shapefile_path = '../data/01_SUBSIDISED_FIELDS/01_subsidised_field.shp'
 
 
