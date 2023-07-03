@@ -1,31 +1,26 @@
 import os
-import glob
-import datetime
+
 import rasterio
-import pandas as pd
 import geopandas as gpd
 import numpy as np
 from rasterio.mask import mask
-import matplotlib.pyplot as plt
-import seaborn as sns
+
 from scipy.optimize import fsolve
 
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
-import json
-from shapely.geometry import mapping
 from sklearn.metrics import accuracy_score
-from s04a_threshold_image_average import calc_image_average
+
 
 np.random.seed(42)
 
 
 
-filename_brp_sample ='../data/thresh_stuff/training/brp/03_brp_sample.shp'
+filename_brp_sample ="../output/01_brp_grassland_sample_200.shp" # Training grass parcel set
 
-fp_waterpoly = '../data/thresh_stuff/training/water'
+fp_waterpoly = "../data/training_data"
 
-sar_images_vv = "../data/thresh_stuff/output/averages"
+sar_images_vv = "../data/thresholding_data/output/averages"
 
 # Mapping of average_X.tif files to corresponding WaterYYYYMMDD.shp files
 mapping_dict = {

@@ -30,10 +30,10 @@ args = parser.parse_args()
 # # access the argument
 # print(args.threshold_value)
 
-filename_brp_sample = '../data/thresh_stuff/training/brp/01_brp_dry_grass_sample.shp'
-fp_waterpoly = '../data/thresh_stuff/training/water'
-sar_images_vv = "../data/thresh_stuff/output/averages"
-binary_images_vv = "../data/thresh_stuff/output/binary"
+filename_brp_sample = '../data/thresh_stuff/training/brp/01_brp_dry_grass_sample.shp' # Validation grass parcel set
+fp_waterpoly = '../data/training_data'
+sar_images_vv = "../data/thresholding_data/output/averages"
+binary_images_vv = "../data/thresholding_data/output/binary"
 
 
 # Mapping of average_X.tif files to corresponding WaterYYYYMMDD.shp files
@@ -97,7 +97,7 @@ def binary_and_confusion():
         binary_image[sar_data > threshold_value] = 0
         binary_image[sar_data <= threshold_value] = 1
 
-        binary_output_filepath = os.path.join("../data/thresh_stuff/output/binary", f'binary_{image_counter}.tif')
+        binary_output_filepath = os.path.join("../data/thresholding_data/output/binary", f'binary_{image_counter}.tif')
         os.makedirs(os.path.dirname(binary_output_filepath), exist_ok=True)
         with rasterio.open(binary_output_filepath, 'w', **profile) as dst:
             dst.write(binary_image, 1)
