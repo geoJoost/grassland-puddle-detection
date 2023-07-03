@@ -287,12 +287,37 @@ def process_rasters(polarisation, clipfunction, shapefile, source_folder):
         clip_func(file_path, shapefile, output_path)
 
 
+
+vv_files = ["Sigma0_dB_VV_20210221.tif", "Sigma0_dB_VV_20210305.tif", "Sigma0_dB_VV_20210329.tif", "Sigma0_dB_VV_20210410.tif", "Sigma0_dB_VV_20210422.tif", "Sigma0_dB_VV_20210504.tif", "Sigma0_dB_VV_20210528.tif", "Sigma0_dB_VV_20210609.tif", "Sigma0_dB_VV_20210621.tif"]
+vh_files = ["Sigma0_dB_VH_20210221.tif", "Sigma0_dB_VH_20210305.tif", "Sigma0_dB_VH_20210329.tif", "Sigma0_dB_VH_20210410.tif", "Sigma0_dB_VH_20210422.tif", "Sigma0_dB_VH_20210504.tif", "Sigma0_dB_VH_20210528.tif", "Sigma0_dB_VH_20210609.tif", "Sigma0_dB_VH_20210621.tif"]
+
+
+def move_raw_sar(input_folder, output_folder, sar_files):
+    # If the output_folder does not exist, create it
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+    
+    for file_name in sar_files:
+        # Full path to the file in the input folder
+        source = os.path.join(input_folder, file_name)
+        # Full path to the file in the output folder (where it will go)
+        dest = os.path.join(output_folder, file_name)
+        
+        # If the file exists in the input folder, then move it
+        if os.path.exists(source):
+            shutil.move(source, dest)
+        else:
+            print(f"File {file_name} does not exist in the input folder.")
+
+    
     
         
 #%% Filter from original S1 data folder, only the backscatter .tif files obtained via central pass during study period. 
 
 filter_og_SAR("data/S1/", "VV", "S1/Sentinel_1A_2021_overview.csv") # VV polarisation
 filter_og_SAR("data/S1/", "VH", "S1/Sentinel_1A_2021_overview.csv") # VH polarisation
+move_raw_sar("data/S1_VV_filtered", "data/thresholding_data/training/vvsar", vv_files) # move files for vv polarization
+move_raw_sar("data/S1_VH_filtered", "data/thresholding_data/training/vhsar", vh_files) # move files for vv polarization 
 
 #%% OPTIONAL : Compress all .tif images provided in separate date subdirectories and store all outputs in same file
 # define source and output directories
