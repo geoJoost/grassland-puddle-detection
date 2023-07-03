@@ -21,10 +21,6 @@ parser.add_argument('--threshold_value', type=float, help='Threshold value. Defa
 # parse the arguments
 args = parser.parse_args()
 
-
-
-
-
 output_path = '../output'
 # To run the script for VV-polarization, change the line below to ***image_folder = '../data/02_VV_mp_clipped'****
 image_folder = '../data/02_VH_mp_clipped'

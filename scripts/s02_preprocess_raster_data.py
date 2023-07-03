@@ -20,8 +20,8 @@ import glob
 
 
 #base = "D:\\RGIC23GR10\\"
-data_folder = r"data/"
-output_folder = r"output/"
+data_folder = "../data"
+output_folder = "../output"
 
 #%% Functions
 
@@ -47,13 +47,13 @@ def filter_og_SAR(infile, polarisation, fp_csv):
     None.
 
     """
-    outfile = os.path.join(data_folder + f"S1_{polarisation}_filtered")
+    outfile = os.path.join(data_folder, f"S1_{polarisation}_filtered")
     
     # Create the output folder if it doesn't exist
     os.makedirs(outfile, exist_ok=True)
     
     # Define complete file-paths
-    infile = os.path.join(data_folder + "S1/")
+    infile = os.path.join(data_folder, "S1")
     
     # Create list of the dates for which images should be filtered for
     s1_pass_info_df = pd.read_csv(os.path.join(data_folder, fp_csv)) #Read pass overview csv file
@@ -150,7 +150,7 @@ def clip_raster_mixedpixel(raster_fp, vector_fp, output_fp):
     """
 
     # Create filepath
-    fp_anlb = os.path.join(output_folder + vector_fp)
+    fp_anlb = os.path.join(output_folder, vector_fp)
     
     print(fp_anlb)
 
@@ -287,12 +287,24 @@ def process_rasters(polarisation, clipfunction, shapefile, source_folder):
         clip_func(file_path, shapefile, output_path)
 
 
+def copy_raw_sar(input_folder, output_folder, sar_files):
+    """
+    Function copies SAR images from input folder to output folder
 
-vv_files = ["Sigma0_dB_VV_20210221.tif", "Sigma0_dB_VV_20210305.tif", "Sigma0_dB_VV_20210329.tif", "Sigma0_dB_VV_20210410.tif", "Sigma0_dB_VV_20210422.tif", "Sigma0_dB_VV_20210504.tif", "Sigma0_dB_VV_20210528.tif", "Sigma0_dB_VV_20210609.tif", "Sigma0_dB_VV_20210621.tif"]
-vh_files = ["Sigma0_dB_VH_20210221.tif", "Sigma0_dB_VH_20210305.tif", "Sigma0_dB_VH_20210329.tif", "Sigma0_dB_VH_20210410.tif", "Sigma0_dB_VH_20210422.tif", "Sigma0_dB_VH_20210504.tif", "Sigma0_dB_VH_20210528.tif", "Sigma0_dB_VH_20210609.tif", "Sigma0_dB_VH_20210621.tif"]
+    Parameters
+    ----------
+    input_folder : string
+        Input foolder (relative path). 
+    output_folder : string
+        Output folder (relative path).
+    sar_files : list
+        List of strings containing filenames you want to copy.
 
+    Returns
+    -------
+    None.
 
-def move_raw_sar(input_folder, output_folder, sar_files):
+    """
     # If the output_folder does not exist, create it
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
@@ -305,7 +317,7 @@ def move_raw_sar(input_folder, output_folder, sar_files):
         
         # If the file exists in the input folder, then move it
         if os.path.exists(source):
-            shutil.move(source, dest)
+            shutil.copy(source, dest)
         else:
             print(f"File {file_name} does not exist in the input folder.")
 
@@ -314,10 +326,15 @@ def move_raw_sar(input_folder, output_folder, sar_files):
         
 #%% Filter from original S1 data folder, only the backscatter .tif files obtained via central pass during study period. 
 
-filter_og_SAR("data/S1/", "VV", "S1/Sentinel_1A_2021_overview.csv") # VV polarisation
-filter_og_SAR("data/S1/", "VH", "S1/Sentinel_1A_2021_overview.csv") # VH polarisation
-move_raw_sar("data/S1_VV_filtered", "data/thresholding_data/training/vvsar", vv_files) # move files for vv polarization
-move_raw_sar("data/S1_VH_filtered", "data/thresholding_data/training/vhsar", vh_files) # move files for vv polarization 
+# filter_og_SAR("data/S1/", "VV", "S1/Sentinel_1A_2021_overview.csv") # VV polarisation
+# filter_og_SAR("data/S1/", "VH", "S1/Sentinel_1A_2021_overview.csv") # VH polarisation
+
+# Get SAR images closest to ground truth water information obtained from S2 data. 
+vv_files = ["Sigma0_dB_VV_20210221.tif", "Sigma0_dB_VV_20210305.tif", "Sigma0_dB_VV_20210329.tif", "Sigma0_dB_VV_20210410.tif", "Sigma0_dB_VV_20210422.tif", "Sigma0_dB_VV_20210504.tif", "Sigma0_dB_VV_20210528.tif", "Sigma0_dB_VV_20210609.tif", "Sigma0_dB_VV_20210621.tif"]
+vh_files = ["Sigma0_dB_VH_20210221.tif", "Sigma0_dB_VH_20210305.tif", "Sigma0_dB_VH_20210329.tif", "Sigma0_dB_VH_20210410.tif", "Sigma0_dB_VH_20210422.tif", "Sigma0_dB_VH_20210504.tif", "Sigma0_dB_VH_20210528.tif", "Sigma0_dB_VH_20210609.tif", "Sigma0_dB_VH_20210621.tif"]
+
+copy_raw_sar("../data/S1_VV_filtered", "../data/thresholding_data/training/vvsar", vv_files) # move files for vv polarization
+copy_raw_sar("../data/S1_VH_filtered", "../data/thresholding_data/training/vhsar", vh_files) # move files for vv polarization 
 
 #%% OPTIONAL : Compress all .tif images provided in separate date subdirectories and store all outputs in same file
 # define source and output directories

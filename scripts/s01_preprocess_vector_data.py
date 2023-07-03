@@ -87,7 +87,7 @@ grassland_brp_fp = "data/01_brp_grasslands.shp" # BRP parcels filtered for grass
 
 #Output filepaths
 joined_parcel_fp = "output/01_subsidised_field.shp" #Moses uses this - to do: RENAME
-brp_grass_sample_fp ="output/01_brp_grassland_sample_200.shp" # 200 BRP grassland parcels which exclude the ANLB parcels
+brp_grass_sample_fp ="output/01_brp_grassland_sample_1000.shp" # 1000 BRP grassland parcels which exclude the ANLB parcels
 validation_parcel_fp = "output/01_anlb_drygrass_merged.shp" # ANLB parcels merged with BRP grass only parcels for validation raster clip
 
 #%% Filter brp to graslands and write to file
@@ -127,7 +127,7 @@ else:
     
     subsidised_field.to_file(joined_parcel_fp)
 
-#%% Create dataset containing only dry grass polygons
+#%% Create training and validation datasets containing only dry grass polygons
 # Load in the ANLB-subsidy parcels and BRP grassland parcels
 # anlb_gdf = gpd.read_file(filtered_anlb_fp)
 # brp_gdf = gpd.read_file(grassland_brp_fp)
@@ -141,8 +141,8 @@ if os.path.exists(brp_grass_sample_fp):
 else:
     print("BRP sampled dataset does not exist yet")
 
-    # Randomly select 70,000 (about 10% of original sample, N=511,031) polygons from the BRP data
-    gdf_brp_sample = brp_large_parcels.sample(n=200, random_state=1)
+    # Randomly select 1000 polygons from the BRP data
+    gdf_brp_sample = brp_large_parcels.sample(n=1000, random_state=1)
 
     # Conduct a reverse clip to make sure both vector files do not overlap
     gdf_brp_clip = gpd.overlay(gdf_brp_sample, anlb_gdf, how='difference')
@@ -153,7 +153,7 @@ else:
     print("BRP sampled dataset created \n")
     
 
-# Create validation shapefiles per date
+
 # Merge/Combine multiple shapefiles into one
 anlb_gdf_drop =  anlb_gdf.drop(columns = 'Centroid')
 
