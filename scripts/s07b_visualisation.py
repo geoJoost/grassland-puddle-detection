@@ -15,11 +15,8 @@ subsidised = gpd.read_file('data/07_fields_subsidised.shp')
 
 # Change CRS to match with plotly
 subsidised = subsidised.to_crs(4326)
-data = pd.read_csv("data/07_percent_binary.csv", index_col=0)
-
-# Transform the parcelId to int type
-subsidised['parcelId'] = subsidised['parcelId'].astype(int)
-
+percent = pd.read_csv("data/07_percent.csv", index_col=0)
+binary = pd.read_csv("data/07_binary.csv", index_col=0)
 # Make the map, add hoverdata and assign the color (yellow)
 fig = px.choropleth_mapbox(subsidised, geojson=subsidised.geometry,
                            locations=subsidised.index, hover_data=subsidised.iloc[:, :-1],
@@ -53,7 +50,7 @@ app.layout = html.Div(
                     [
                         html.H2("Puddle Dashboard", style={"text-align": "center"}),
                         html.P(
-                            "This interactive tool leverages SAR data to map puddles in grasslands. The dashboard provides valuable insights into the time and extent of inundation in these areas. Through two dynamic graphs, you can explore the temporal patterns of puddle formation and track the percentage of land affected by inundation. The graphs update instantly when clicked, allowing you to delve deeper into specific time periods or regions of interest. With this comprehensive visualization, you can gain a better understanding of puddle dynamics and make informed decisions related to grassland management and conservation.",
+                            "This interactive tool leverages SAR VH (P0.5) data to visualise the puddle mapping project. The dashboard provides valuable insights into the time and extent of inundation in these areas. Through two dynamic graphs, you can explore the temporal patterns of puddle formation and track the percentage of land affected by inundation. The graphs update instantly when clicked, allowing you to delve deeper into specific time periods or regions of interest. With this comprehensive visualization, you can gain a better understanding of puddle dynamics and make informed decisions related to grassland management and conservation.",
                             style={"text-align": "justify"},
                         ),
                     ]
@@ -81,7 +78,7 @@ app.layout = html.Div(
                     style={"text-align": "center", "width": "100%"},
                 ),
                 html.Div(
-                    [html.H3("Inundation percentage [%]", style={"margin-bottom": "0.5px"}),
+                    [html.H3("Inundation area of the plot", style={"margin-bottom": "0.5px"}),
                      dcc.Graph(figure=fig_line2, id="graph2")],
                     style={"text-align": "center", "width": "100%"},
                 ),
@@ -105,19 +102,21 @@ def update_graphs(click):
         return {}, {}
     # Extract the clicked polygon's ID (or other identifying information) from clickData
     clicked_id = click['points'][0]['pointIndex']
-    # Get the parcelId based on the index
-    parcel_id = data.loc[clicked_id, 'parcelId']
+    # Get the OBJECTID based on the index
+    parcel_id = binary.loc[clicked_id, 'OBJECTID']
     # Filter the DataFrame based on the clicked polygon's ID and type ('binary')
-    filtered_binary = data[(data['parcelId'] == parcel_id) & (data['type'] == 'binary')]
-    # Sort the subset to match with graph
-    filtered_binary = filtered_binary.sort_values(by=['time'])
+    filtered_binary = binary[(binary['OBJECTID'] == parcel_id) & (binary['type'] == 'binary')]
+    # Change the value column
+    filtered_binary.rename(columns={'value': 'Class'}, inplace=True)
     # Create graph
     fig_binary = create_graph(filtered_binary)
 
+    # Get the OBJECTID based on the index
+    parcel_id = percent.loc[clicked_id, 'OBJECTID']
     # Filter the DataFrame based on the clicked polygon's ID and type ('percent')
-    filtered_percent = data[(data['parcelId'] == parcel_id) & (data['type'] == 'percentage')]
-    # Sort the subset to match with graph
-    filtered_percent = filtered_percent.sort_values(by=['time', 'value'])
+    filtered_percent = percent[(percent['OBJECTID'] == parcel_id) & (percent['type'] == 'percentage')]
+    # Change the value column
+    filtered_percent.rename(columns={'value': 'Inundation [%]'}, inplace=True)
     # Create graph
     fig_percent = create_graph(filtered_percent)
 
@@ -126,9 +125,12 @@ def update_graphs(click):
 
 # Function to create a graph based on a filtered DataFrame
 def create_graph(df):
-    # Customize the graph creation based on your data and desired graph type
-    line = px.line(df, x='time', y='value')
-    # Add any desired customization to the figure here
+    if "Class" in df.columns:
+        df.sort_values(by='Class', ascending=False)
+        line = px.line(df, x='time', y='Class')
+    else:
+        df.sort_values(by='Inundation [%]', ascending=True)
+        line = px.line(df, x='time', y='Inundation [%]')
     return line
 
 
