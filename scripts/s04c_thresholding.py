@@ -2,14 +2,14 @@ import rasterio
 import numpy as np
 import geopandas as gpd
 import os
-from rasterio.mask import mask
+
 import glob
 import pandas as pd
 from datetime import datetime
-import math
+
 from s04b_get_threshold_value import average_threshold
 from rasterio.io import MemoryFile
-import sys
+
 import argparse
 
 # create the parser
@@ -26,9 +26,9 @@ args = parser.parse_args()
 
 
 output_path = '../output'
-# To run the script for VV-polarization, change the line below to *** image_folder = '../data/02_VV_mp_clipped' ****
-image_folder = '../data/02_VV_mp_clipped'
-shapefile_path = '../data/01_SUBSIDISED_FIELDS/01_subsidised_field.shp'
+# To run the script for VV-polarization, change the line below to ***image_folder = '../data/02_VV_mp_clipped'****
+image_folder = '../data/02_VH_mp_clipped'
+shapefile_path = '../output/01_subsidised_field.shp'
 
 
 
@@ -77,11 +77,6 @@ def calculate_inundation_all_images(image_folder, shapefile_filepath, output_fol
     end_date = datetime.now().replace(
         month=category_dates["3d"][2], day=category_dates["3d"][3]
     ).date()
-    # image_filepaths = [
-    #     image for image in image_filepaths if start_date <= datetime.strptime(
-    #         os.path.basename(image).split('_')[4], "%Y%m%d"
-    #     ).date() <= end_date
-    # ]
 
     image_filepaths = [
     image for image in image_filepaths if datetime.strptime(
@@ -103,20 +98,6 @@ def calculate_inundation_all_images(image_folder, shapefile_filepath, output_fol
             image1 = src1.read(1)
             image2 = src2.read(1)
             
-            # # Create a mask where True corresponds to the pixels you want to ignore
-            # mask_array = np.logical_or(image1 == nodata_value, image2 == nodata_value)
-
-            # # Use this mask to create masked versions of your images
-            # masked_image1 = np.ma.array(image1, mask=mask_array)
-            # masked_image2 = np.ma.array(image2, mask=mask_array)
-
-            # Now calculate the mean
-            # average_image = np.ma.mean(np.array([masked_image1, masked_image2]), axis=0)
-
-            # Finally, convert back to a regular numpy array and fill the ignored places with your nodata_value
-            # average_image = np.ma.filled(average_image, fill_value=nodata_value)
-
-            # average_image = np.mean([image1, image2], axis=0)
 
             # Convert nodata values to np.nan
             image_one = np.where(image1 == nodata_value, np.nan, image1)
@@ -186,8 +167,6 @@ def calculate_inundation_all_images(image_folder, shapefile_filepath, output_fol
                     # if math.isnan(row['fieldid']) else int(row['fieldid'])
                     parcel_df.loc[idx, column_name] = int(round(inundation_percentage))
 
-                # else:
-                #     df.loc[idx, f'binary_{i + 1}'] = "-"
 
 
     # Save binary dataframe to CSV and Excel files

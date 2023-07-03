@@ -17,37 +17,19 @@ import seaborn as sns
 
 # %% Read in files
 # First load in the ANLB-subsidy and BRP data
-gdf_anlb = gpd.read_file("output/01_ANLB_filtered.shp").to_crs('EPSG:32631')
-
-filename_brp_sample ='output/03_brp_sample.shp'
-
-# Repeat for the BRP data
-if os.path.exists(filename_brp_sample):
-    print("BRP sampled dataset already exists")
-    gdf_brp_clip = gpd.read_file(filename_brp_sample)
-else:
-    print("BRP sampled dataset does not exist yet")
-    # Read in BRP data
-    gdf_brp = gpd.read_file("data\Shapes\gewaspercelen_2021_S2Tiles_GWT_BF12_AHN2.shp").to_crs('EPSG:32631')
-    
-    # Following values are found: 'Grasland', 'Bouwland', 'Overige', 'Natuurterrein', 'Braakland'
-    # and we only want to keep the grasslands for most realistic comparison
-    gdf_brp_filtered = gdf_brp[gdf_brp['cat_gewasc'] == 'Grasland']
-    
-    # Randomly select 70,000 (about 10% of original sample, N=511,031) polygons from the BRP data
-    gdf_brp_sample = gdf_brp.sample(n=50000, random_state=1)
-
-    # Conduct a reverse clip to make sure both vector files do not overlap
-    gdf_brp_clip = gpd.overlay(gdf_brp_sample, gdf_anlb, how='difference')
-    
-    # Export the BRP sampled dataset to file
-    gdf_brp_clip.to_file(filename_brp_sample)
-    
-    print("BRP sampled dataset created \n")
+gdf_anlb = gpd.read_file("data/01_ANLB_filtered.shp")
+gdf_brp_clip = gpd.read_file("output/01_brp_grassland_sample_200.shp")
 
 
 # %% Define equations
 def create_vector(extent):
+    """
+    This function does the following:
+    1. Extract individual corners of the extent covering a single SAR pixel (extent should be in a list format)
+    2. Converts this into a shapely Polygon
+    3. Into a gdf with EPSG:4326 since this is what the extent was created in
+    
+    """
     # Extract the individual coordinates from the extent list
     xmin, ymin, xmax, ymax = extent
     
@@ -59,24 +41,31 @@ def create_vector(extent):
     
     return gdf
 
-""" 
-This function does the following things:
-    1. Load .tif files as Numpy arrays
-    2. And returns transform required to georeference the array with the vector data
-"""
+
 # Load raster files and add the transform
 def load_raster(filepath):
+    """ 
+    This function does the following things:
+        1. Load .tif files as Numpy arrays
+        2. And returns transform required to georeference the array with the vector data
+    """
     with rasterio.open(filepath, driver='GTiff')  as src:
         return src.read(1), src.transform
 
-"""
-This function does the following things:
-    1. Create a empty DataFrame
-    2. Enumerates over all sub-folders to retrieve SAR VV-backscatter images
-    3. Retrieve statistics using zonal_stats from rasterstats
-"""
 # Extract backscatter values from both Sentinel images
 def retrieve_stats(raster, polygon, affine, stats_lst = ['count', 'min', 'mean', 'max', 'median']):
+    """
+    This function does the following things:
+        1. Create a empty DataFrame
+        2. Enumerates over all sub-folders to retrieve SAR VH-backscatter images
+        3. Retrieve statistics using zonal_stats from rasterstats
+        
+    Inputs
+    - 'raster' are the SAR images (as Numpy array) used for retrieving zonal statistics
+    - 'polygon' are the polygons used for overlaying on top of the SAR data
+    - 'affine' is required to georeference the Numpz array
+    - 'stats_lst' are the statistics one wants to retrieve. NOTE this should not be changed in the current code as it will lead to errors
+    """
     
     # Define dataframe for saving values later
     df_stats = pd.DataFrame(index = np.arange(1), columns = stats_lst)
@@ -119,15 +108,20 @@ def retrieve_stats(raster, polygon, affine, stats_lst = ['count', 'min', 'mean',
             df_stats[stat_curr] = round(np.nanmedian(stat_map[stat_curr]), 2)
 
     return df_stats
-
-"""
-This function does the following things:
-    1. Through a for-loop load each individual SAR image from Sentinel-1
-    2. Using a defined statistics list retrieve minimum, mean, maximum, and median backscatter values (dB)
-    3. With tune fcntion "retrieve_stats" extract statistics based on vector set (either ANLB or BRP)
-    4. Append statistics into a list and repeat the loop until all SAR statsitics are extracted
-"""  
+ 
 def retrieve_zonal_statistics(vector, vector_name: str):
+    """
+    This function does the following things:
+        1. Through a for-loop load each individual SAR image from Sentinel-1
+        2. Using a defined statistics list retrieve minimum, mean, maximum, and median backscatter values (dB)
+        3. With tune fcntion "retrieve_stats" extract statistics based on vector set (either ANLB or BRP)
+        4. Append statistics into a list and repeat the loop until all SAR statsitics are extracted
+    
+    Inputs
+        - 'Vector' should be the desired polygons to retrieve the zonal statistics from
+        - 'Vector_name' should be the string to use for printing to know the current progress
+    
+    """ 
     # Define empty list to merge dataframes later on
     df_lst, df_combined = [], []
 
@@ -146,8 +140,8 @@ def retrieve_zonal_statistics(vector, vector_name: str):
             # Since we now identified the correct sub-folder
             # we can index for the desired .tif files
             for filename in os.listdir(item_path):
-                # Index for files named "Sigma0_dB_VV_20210104.tif", and ignore "Sigma0_dB_VV_20210104_quicklook.tif"
-                if filename.endswith(".tif") and "VV" in filename and not ("Coherence" in filename or "quicklook" in filename):
+                # Index for files named "Sigma0_dB_VH_20210104.tif", and ignore "Sigma0_dB_VH_20210104_quicklook.tif"
+                if filename.endswith(".tif") and "VH" in filename and not ("Coherence" in filename or "quicklook" in filename):
                     print(f"Working on image: {filename} with {vector_name}")
                     
                     file_path = os.path.join(item_path, filename)
@@ -165,7 +159,7 @@ def retrieve_zonal_statistics(vector, vector_name: str):
                     # Perform zonal statistics
                     df_stats = retrieve_stats(sar_img, vector, transform_img, stats_lst)
                     
-                    # Split the entire name ("Sigma0_dB_VV_20210128.tif") to only keep "20210128"
+                    # Split the entire name ("Sigma0_dB_VH_20210128.tif") to only keep "20210128"
                     date = filename.split('_')[-1].split('.')[0].strip()
                     
                     # Add date into new column
@@ -221,7 +215,7 @@ fig, ax = plt.subplots(figsize = (12, 8))
 anlb_col = '#219ebc'
 
 sns.lineplot(x='days_since_jan1', y='mean', data=df_anlb, 
-             color = anlb_col, label=r'$\mu$ of ANLB ($\mathit{N}$ = 481)', linestyle = '--')
+             color = anlb_col, label=r'$\mu$ of ANLB ($\mathit{N}$ = 481 obj)', linestyle = '--')
 
 # Shade the area in-between using the minimum and maximum backscatter values
 anlb_min = df_anlb['min']
@@ -232,7 +226,7 @@ brp_col = '#fb8500'
 
 # Create simple line plot
 sns.lineplot(x='days_since_jan1', y='mean', data=df_brp, 
-             color = brp_col, label='$\mu$ of BRP ($\mathit{n}$ = 50,000)', linestyle = '--')
+             color = brp_col, label='$\mu$ of BRP ($\mathit{n}$ = 200 obj)', linestyle = '--')
 
 # Shade the area in-between using the minimum and maximum backscatter values
 brp_min = df_brp['min']
@@ -263,12 +257,12 @@ for i, extent in enumerate(extent_lst):
     
     line = sns.lineplot(x='days_since_jan1', y='mean', data=df_pix, 
                         color = pix_col, linestyle = ':', alpha=0.5,
-                        label='Representative pixels in ANLB-parcel ($\mathit{n}$ = 5)' if i < 2 else None)
+                        label='Representative pixels in ANLb-parcel ($\mathit{n}$ = 5)' if i < 2 else None)
 
 
 """ MIN-MAX FILLS"""
 plt.fill_between(df_anlb['days_since_jan1'], anlb_min, anlb_max, 
-                color = anlb_col, alpha=0.2, label= "Min-Max of ANLB")
+                color = anlb_col, alpha=0.2, label= "Min-Max of ANLb")
 ax.fill_between(df_brp['days_since_jan1'], brp_min, brp_max, 
                 color = brp_col, alpha=0.2, label='Min-Max of BRP')
 
@@ -277,7 +271,7 @@ plt.margins(0, 0)
 
 # add label to the axis and label to the plot
 ax.set(xlabel ="Day of the year", 
-       ylabel = "VV-backscatter [dB]")#,
+       ylabel = "VH-backscatter [dB]")#,
 
 ax.set_title("Temporal variations of backscatter in different parcels", fontsize=16)
 
