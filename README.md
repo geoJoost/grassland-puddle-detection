@@ -16,8 +16,8 @@ C -- Get Statistics --> B
 B -- Clip SAR data --> D{s04}
 D --> E[s04a] -- Get Image Average --> F[s04c] -- Get Threshold Value --> G[s04b];
 F -- Binary Classification ----> H[s04d]
-H -- Validation --> I[s05]
-I -- Visualization --> J[s06]
+H -- Validation --> I[s05a]
+I -- Visualization --> J[s05b]
 ```
 
 ## Documentation
