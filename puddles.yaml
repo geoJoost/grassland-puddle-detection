@@ -1,0 +1,71 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Jul  3 16:46:08 2023
+
+@author: petra
+"""
+
+name: pudddle 
+dependencies:
+  - affine
+  - dash
+  - dask
+  - datetime
+  - fiona
+  - folium
+  - gdal
+  - geopandas
+  - glob
+  - joblib
+  - json
+  - math
+  - matplotlib
+  - numpy
+  - os
+  - pandas
+  - PIL
+  - plotly 
+  - python
+  - rasterio
+  - rasterstats
+  - scikit-image
+  - scikit-learn
+  - scipy
+  - seaborn
+  - shapely
+  - shutil
+  - simplejson
+  - six
+  - spyder
+  - sys
+  - attrs
+  - certifi
+  - click
+  - cligj
+  - contourpy
+  - cycler
+  - et-xmlfile
+  - fonttools
+  - kiwisolver
+  - openpyxl
+  - packaging
+  - Pillow
+  - pyexiv2
+  - pyparsing
+  - pyproj
+  - python-dateutil
+  - pytz
+  - snuggs 
+  - threadpoolctl
+  - tzdata
+
+
+
+
+
+
+
+
+
+
+ 

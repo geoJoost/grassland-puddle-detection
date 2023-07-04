@@ -11,12 +11,12 @@ from dash import Dash, dcc, html, Input, Output
 import plotly.express as px
 
 # Read file
-subsidised = gpd.read_file('data/07_fields_subsidised.shp')
+subsidised = gpd.read_file('visualisation/07_fields_subsidised.shp')
 
 # Change CRS to match with plotly
 subsidised = subsidised.to_crs(4326)
-percent = pd.read_csv("data/07_percent.csv", index_col=0)
-binary = pd.read_csv("data/07_binary.csv", index_col=0)
+percent = pd.read_csv("visualisation/07_percent.csv", index_col=0)
+binary = pd.read_csv("visualisation/07_binary.csv", index_col=0)
 # Make the map, add hoverdata and assign the color (yellow)
 fig = px.choropleth_mapbox(subsidised, geojson=subsidised.geometry,
                            locations=subsidised.index, hover_data=subsidised.iloc[:, :-1],
@@ -136,3 +136,6 @@ def create_graph(df):
 
 # Run the app
 app.run_server(debug=True)
+
+# When the application is not opening, please paste this link in a web-browser, while running the script!
+# http://127.0.0.1:8050/

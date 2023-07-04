@@ -4,9 +4,9 @@ import os
 
 def calc_image_average():
     # To run the script for VV-polarization, change the line below to
-    # image_filepaths = sorted(glob.glob(f"../data/thresholding_data/training/vvsar/*.tif"))
+    image_filepaths = sorted(glob.glob(f"../data/thresholding_data/training/vvsar/*.tif"))
 
-    image_filepaths = sorted(glob.glob(f"../data/thresholding_data/training/vhsar/*.tif"))
+    #image_filepaths = sorted(glob.glob(f"../data/thresholding_data/training/vhsar/*.tif"))
 
     for i in range(0, len(image_filepaths) - 1, 2):
         with rasterio.open(image_filepaths[i]) as src1, rasterio.open(image_filepaths[min(i + 1, len(image_filepaths) - 1)]) as src2:
