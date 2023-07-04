@@ -2,7 +2,7 @@ import pandas as pd
 import geopandas as gpd
 
 #read csv file and transform to parcelId, time, value format 
-df = pd.read_csv('data/VH-RESULTS/0.5-output.csv')
+df = pd.read_csv('visualisation/vh-results/0.5-output.csv')
 binary = pd.melt(
     df,
     id_vars='OBJECTID',
@@ -14,10 +14,10 @@ del df
 # Add type column and change the values
 binary["type"] = "binary"
 binary['value'] = binary['value'].replace({1: 'inundated', 0: 'dry'})
-binary.to_csv("data/07_binary.csv")
+binary.to_csv("visualisation/07_binary.csv")
 
 #read csv file and transform to parcelId, time, value format 
-df1 = pd.read_csv('data/vv-results/0.5-parcel_inundation.csv')
+df1 = pd.read_csv('visualisation/vh-results/0.5-parcel_inundation.csv')
 percent = pd.melt(
     df1,
     id_vars='OBJECTID',
@@ -28,12 +28,12 @@ del df1
 
 # Add type column
 percent["type"] = "percentage"
-percent.to_csv("data/07_percent.csv")
+percent.to_csv("visualisation/07_percent.csv")
 
 del percent, binary
 
 # read in the subsidised fields to preprocess
-df2 = gpd.read_file("output/01_subsidised_field.shp")
+df2 = gpd.read_file("visualisation/01_subsidised_field.shp")
 
 #Only keeping necessarry columns and rename to English
 subsidised = df2[['OBJECTID','CODE_BEHEE', 'year', 'fieldid', 'provincie', 'gemeente', 'woonplaats', 'regio', 'waterschap', 'geometry']].copy()
@@ -42,6 +42,6 @@ subsidised.rename(columns={'provincie': 'province', 'gemeente': 'muni', 'woonpla
 del df2
 
 # write to file
-subsidised.to_file('data/07_fields_subsidised.shp')
+subsidised.to_file('visualisation/07_fields_subsidised.shp')
 
 

@@ -31,6 +31,7 @@ output
 myenv
 input
 NOTUSED_input
+visualisation
 
 # pdf files
 **.pdf
