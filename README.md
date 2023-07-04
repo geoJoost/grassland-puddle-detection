@@ -107,3 +107,19 @@ This script validates the accuracy of the thresholding algorithm built in `s04c_
 **Output Folder(s)**
 
 - _../output_
+
+### s05a_preprocessing_visualisation.py
+
+This script preprocesses the data generated in `s04c_thresholding.py`. Also, the joined and filtered ANLb data is preprocessed to be included in the dashboard.
+
+**NOTE:** This script is not part of the pipeline
+**Output Folder(s)**
+- _../data/visualisation/
+
+### s05a_demo_visualisation.py
+
+This script runs a demo visualisation using Dash and Plotly. When running, it displays an interactive map with two graphs that update when clicking on the polygons in the map.
+
+**NOTE:** This script is not part of the pipeline
+**Input folder(s)**
+- _../data/visualisation/
