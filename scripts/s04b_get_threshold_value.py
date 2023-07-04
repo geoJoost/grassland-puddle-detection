@@ -16,9 +16,11 @@ np.random.seed(42)
 
 
 
-filename_brp_sample ="../output/01_brp_grassland_sample_200.shp" # Training grass parcel set
+# filename_brp_sample = "../output/01_brp_grassland_sample_200.shp" # Training grass parcel set
+filename_brp_sample = "../data/thresholding_data/training/brp/03_brp_sample.shp"
+# fp_waterpoly = "../data/training_data"
 
-fp_waterpoly = "../data/training_data"
+fp_waterpoly = "../data/thresholding_data/training/water"
 
 sar_images_vv = "../data/thresholding_data/output/averages"
 
