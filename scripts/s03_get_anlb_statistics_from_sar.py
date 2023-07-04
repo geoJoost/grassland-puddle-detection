@@ -17,8 +17,8 @@ import seaborn as sns
 
 # %% Read in files
 # First load in the ANLB-subsidy and BRP data
-gdf_anlb = gpd.read_file("data/01_ANLB_filtered.shp")
-gdf_brp_clip = gpd.read_file("output/01_brp_grassland_sample_200.shp")
+gdf_anlb = gpd.read_file("../data/01_ANLB_filtered.shp")
+gdf_brp_clip = gpd.read_file("../output/01_brp_grassland_sample_1000.shp")
 
 
 # %% Define equations
@@ -57,7 +57,7 @@ def retrieve_stats(raster, polygon, affine, stats_lst = ['count', 'min', 'mean',
     """
     This function does the following things:
         1. Create a empty DataFrame
-        2. Enumerates over all sub-folders to retrieve SAR VH-backscatter images
+        2. Enumerates over all sub-folders to retrieve SAR VV-backscatter images
         3. Retrieve statistics using zonal_stats from rasterstats
         
     Inputs
@@ -127,7 +127,7 @@ def retrieve_zonal_statistics(vector, vector_name: str):
 
     # Define data folder
     # NOTE: we take the original SAR images to cover backscatter values in the BRP parcels as well
-    rootdir = "data\S1"  # Specify the directory path here 
+    rootdir = "../data/S1"  # Specify the directory path here 
 
     # Loop over the entire dir
     for i, item in enumerate(sorted(os.listdir(rootdir))):
@@ -140,7 +140,7 @@ def retrieve_zonal_statistics(vector, vector_name: str):
             # Since we now identified the correct sub-folder
             # we can index for the desired .tif files
             for filename in os.listdir(item_path):
-                # Index for files named "Sigma0_dB_VH_20210104.tif", and ignore "Sigma0_dB_VH_20210104_quicklook.tif"
+                # Index for files named "Sigma0_dB_VV_20210104.tif", and ignore "Sigma0_dB_VH_20210104_quicklook.tif"
                 if filename.endswith(".tif") and "VH" in filename and not ("Coherence" in filename or "quicklook" in filename):
                     print(f"Working on image: {filename} with {vector_name}")
                     
@@ -159,7 +159,7 @@ def retrieve_zonal_statistics(vector, vector_name: str):
                     # Perform zonal statistics
                     df_stats = retrieve_stats(sar_img, vector, transform_img, stats_lst)
                     
-                    # Split the entire name ("Sigma0_dB_VH_20210128.tif") to only keep "20210128"
+                    # Split the entire name ("Sigma0_dB_VV_20210128.tif") to only keep "20210128"
                     date = filename.split('_')[-1].split('.')[0].strip()
                     
                     # Add date into new column
@@ -186,8 +186,8 @@ def retrieve_zonal_statistics(vector, vector_name: str):
 
 # %% Retrieve zonal statistics for the ANLB and BNRP data
 # Assign filenames for checking if the .csv exists, and for creating a new one if needed
-filename_anlb = "output/03_anlb_statistics.csv"
-filename_brp = "output/03_brp_statistics.csv"
+filename_anlb = "../output/03_anlb_statistics.csv"
+filename_brp = "../output/03_brp_statistics.csv"
 
 # Check if the ANLB statistics file already exists
 if os.path.exists(filename_anlb):
@@ -226,7 +226,7 @@ brp_col = '#fb8500'
 
 # Create simple line plot
 sns.lineplot(x='days_since_jan1', y='mean', data=df_brp, 
-             color = brp_col, label='$\mu$ of BRP ($\mathit{n}$ = 200 obj)', linestyle = '--')
+             color = brp_col, label='$\mu$ of BRP ($\mathit{n}$ = 1000 obj)', linestyle = '--')
 
 # Shade the area in-between using the minimum and maximum backscatter values
 brp_min = df_brp['min']
@@ -302,4 +302,4 @@ plt.tight_layout()
 #plt.show()
 
 # Save the figure
-plt.savefig("output/03_timeseries_backscatter.png")
+plt.savefig("../output/03_timeseries_backscatter.png")

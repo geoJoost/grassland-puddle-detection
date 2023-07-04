@@ -78,17 +78,17 @@ def joindataframes(df1, df2):
 #%% Define filepaths
 
 #Input filepaths
-brp_parcels_fp = "data/Shapes/gewaspercelen_2021_S2Tiles_GWT_BF12_AHN2.shp" # BRP parcels
-anlb_parcel_filepaths = "data/Shapes/ANLB_2021.shp" # ANLB parcels
+brp_parcels_fp = "../data/Shapes/gewaspercelen_2021_S2Tiles_GWT_BF12_AHN2.shp" # BRP parcels
+anlb_parcel_filepaths = "../data/Shapes/ANLB_2021.shp" # ANLB parcels
 
 #Intermediate filepaths
-filtered_anlb_fp = "data/01_ANLB_filtered.shp" # ANLB parcels filtered for subsidy packages 3a-b-c-d
-grassland_brp_fp = "data/01_brp_grasslands.shp" # BRP parcels filtered for grasslands
+filtered_anlb_fp = "../data/01_ANLB_filtered.shp" # ANLB parcels filtered for subsidy packages 3a-b-c-d
+grassland_brp_fp = "../data/01_brp_grasslands.shp" # BRP parcels filtered for grasslands
 
 #Output filepaths
-joined_parcel_fp = "output/01_subsidised_field.shp" #Moses uses this - to do: RENAME
-brp_grass_sample_fp ="output/01_brp_grassland_sample_1000.shp" # 1000 BRP grassland parcels which exclude the ANLB parcels
-validation_parcel_fp = "output/01_anlb_drygrass_merged.shp" # ANLB parcels merged with BRP grass only parcels for validation raster clip
+joined_parcel_fp = "../output/01_subsidised_field.shp" #Moses uses this - to do: RENAME
+brp_grass_sample_fp ="../output/01_brp_grassland_sample_1000.shp" # 1000 BRP grassland parcels which exclude the ANLB parcels
+validation_parcel_fp = "../output/01_anlb_drygrass_merged.shp" # ANLB parcels merged with BRP grass only parcels for validation raster clip
 
 #%% Filter brp to graslands and write to file
 

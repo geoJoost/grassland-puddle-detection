@@ -19,7 +19,7 @@ np.random.seed(42)
 filename_brp_sample ="../output/01_brp_grassland_sample_1000.shp" 
 
 
-fp_waterpoly = "../data/thresholding_data/training/water"
+fp_waterpoly = "../data/training_data"
 
 sar_images_vv = "../data/thresholding_data/output/averages"
 

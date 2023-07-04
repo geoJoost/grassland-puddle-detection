@@ -23,10 +23,8 @@ args = parser.parse_args()
 
 output_path = '../output'
 # To run the script for VV-polarization, change the line below to ***image_folder = '../data/02_VV_mp_clipped'****
-image_folder = '../data/02_VH_mp_clipped'
-shapefile_path = '../data/01_SUBSIDISED_FIELDS/01_subsidised_field.shp'
-
-# shapefile_path = '../output/01_subsidised_field.shp'
+image_folder = '../output/02_VH_mp_clipped'
+shapefile_path = '../output/01_subsidised_field.shp'
 
 
 
@@ -134,8 +132,6 @@ def calculate_inundation_all_images(image_folder, shapefile_filepath, output_fol
 
             gdf = gdf.to_crs(src1.crs)
 
-            
-
             for idx, row in gdf.iterrows():
                 start_month, start_day, end_month, end_day = category_dates[row["CODE_BEHEE"]]
                 start_date = datetime(date.year, start_month, start_day)
@@ -146,8 +142,6 @@ def calculate_inundation_all_images(image_folder, shapefile_filepath, output_fol
                     with MemoryFile() as memfile:
                         with memfile.open(**profile) as dataset:
                             dataset.write(binary_image, 1)
-
-                            
                             # Now you can pass the dataset (which is a DatasetWriter object) to the mask function
                             parcel_binary_image, _ = rasterio.mask.mask(dataset, [row['geometry']], crop=True, nodata=np.nan)
 
