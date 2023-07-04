@@ -25,6 +25,8 @@ I -- Visualization --> J[s05b]
 The following section outlines what each script does and what modifications users might want to make.
 
 **NOTE:** Calling the `main.py` script runs the entire workflow explained below
+Upon cloning the repository please place all source data from WENR (S1, Shapes) in **data** folder.
+Reference data created by RGIC group 10 as well as a separate folder containing input data for visualization will be provided on external hard drive.
 
 ### s01_preprocess_vector_data.py
 
