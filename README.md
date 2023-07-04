@@ -118,7 +118,7 @@ This script preprocesses the data generated in `s04c_thresholding.py` when ran f
 **Output Folder(s)**
 - _../data/visualisation/
 
-### s05a_demo_visualisation.py
+### s05a_visualisation_demo.py
 
 This script runs a demo visualisation using Dash and Plotly. When running, it displays an interactive map with two graphs that update when clicking on the polygons in the map.
 
